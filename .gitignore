@@ -135,3 +135,7 @@
 /Praca/6.Euler/*.out
 /Praca/6.Euler/*.synctex.gz
 /Praca/6.Euler/*.toc
+
+/Program/*.out
+/Program/*.exe
+/Program/*.hpp.gch
