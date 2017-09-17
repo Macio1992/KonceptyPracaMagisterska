@@ -1,0 +1,76 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+
+\author{Maciej Zbierowski}
+\title{Koncepty jako sposób ograniczania argumentów szablonu}
+
+\linespread{1.3}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{amsthm}
+\usepackage[]{algorithm2e}
+\usepackage{standalone}
+
+\hypersetup{
+	colorlinks=true,
+	linkcolor=black,
+	filecolor=magenta,
+	urlcolor=cyan,
+	pdftitle=Praca Magisterska,
+	bookmarks=true,
+	pdfpagemode=FullScreen
+}
+
+\begin{document}
+	\pagenumbering{gobble}
+	\maketitle
+	\newpage
+	\tableofcontents
+	\pagenumbering{arabic}
+	\newpage
+
+	\input{1.Wstep/Wstep}
+	
+	\input{2.Szablony/Szablony}
+	
+	\newpage
+	
+	\input{3.Koncepty/Koncepty}
+	
+	\newpage
+	
+	\input{4.Przeciazanie/Przeciazanie}
+	
+	\newpage
+	
+	\input{6.Euler/Euler}
+	
+	\newpage
+	
+	%\newpage
+
+	%\section{Rozdział 5}
+	%Zawartość rozdziału 5
+	
+	%\newpage
+	
+	\input{5.Ostatni/Ostatni}
+	
+	\newpage
+	
+	\section{Bibliografia}
+	\begin{thebibliography}{6}
+	
+	\bibitem{first} Gabriel Dos Reis, \emph{Generic Programming in C++: The Next Level.}, ACCU, 2002.
+	\bibitem{second} Bjarne Stroustrup, \emph{The Design and Evolution of C++}, AddisonWesley, 1994
+	\bibitem{third}  Bjarne Stroustrup, \emph{Expressing the standard library requirements asconcepts}	
+	\bibitem{fourth} Gabriel Dos Reis, Bjarne Stroustrup, \href{http://www.stroustrup.com/popl06.pdf}{\emph{Specifying C++ Concepts}}
+	\bibitem{fifth} J. C. Dehnert, A. Stepanov, \emph{Fundamentals of Generic Programming}, Dagstuhl Seminar on Generic Programming.1998. Springer LNCS.
+
+	\bibitem{sixth} A. Stepanov, Daniel E.Rose, \emph{From Mathematics to Generic Programming}
+	\bibitem{seventh} D. Gregor, J. Jarvi, J. Siek, B. Stroustrup, G. Dos Reis, A. Lumsdaine, \emph{Concepts: Linguistic Support for Generic Programming in C++}, OOPSLA’06.
+	\bibitem {eighth} Scott Meyers, \emph{Effective Modern C++}, O'REILLY 2015
+	\end{thebibliography}
+
+\end{document}

@@ -1,0 +1,38 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+
+\begin{document}
+\lstset{language=C++}
+
+%\subsection*{Wprowadzenie}
+W 1987 próbowano projektować szablony z odpowiednimi interfejsami. Chciano by szablony:
+
+\begin{itemize}
+
+\item były w pełni ogólne i wyraziste
+\item by nie wykorzystywały większych zasobów w porównaniu do kodowania ręcznego
+\item by miały dobrze określone interfejsy
+
+\end{itemize}
+
+\noindent Długo nie dało się osiągnąć tych trzech rzeczy, ale za to osiągnięto:
+
+\begin{itemize}
+
+\item \emph{kompletność Turinga}\footnote{(ang. Turing Completness) umiejętność do rozwiązania każdego zadania, czyli udzielenie odpowiedzi na każde zadanie. Program, który jest kompletny według Turinga może być wykorzystany do symulacji jakiejkolwiek 1-taśmowej maszyny Turinga}
+\item lepszą wydajność (w porównaniu do kodu pisanego ręcznie)
+\item kiepskie interfejsy (praktycznie \emph{typowanie kaczkowe czasu kompilacji})\footnote{(ang. duck typing) rozpoznanie typu obiektu, nie na podstawie deklaracji, ale przez badanie metod udostępnionych przez obiekt}
+
+\end{itemize}
+
+Brak dobrze określonych interfejsów prowadzi do szczególnie złych wiadomości błędów. Dwie pozostałe właściwości uczyniły z szablonów sukces.
+
+Rozwiązanie problemu specyfikacji interfejsu zostało, przez Alexa Stepanova nazwane \textbf{konceptami}. \textbf{Koncept} to zbiór wymagań argumentów szablonu. Można też go nazwać systemem typów dla szablonów, który obiecuje znacząco ulepszyć diagnostyki błędów i zwiększyć siłę ekspresji, taką jak przeciążanie konceptowe oraz częściową specjalizację szablonu funkcji.
+
+Koncepty (\emph{The Concepts TS} zostały opublikowane i zaimplementowane w wersji 6.1 kompilatora GCC w kwietniu 2016 roku. Fundamentalnie to predykaty czasu kompilacji typów i wartości. Mogą być łączone zwykłymi operatorami logicznymi (\verb#&&#, \verb#||#, \verb#!#)
+
+%\addcontentsline{toc}{subsection}{Wprowadzenie}
+
+\end{document}

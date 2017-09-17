@@ -1,0 +1,88 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+
+\begin{document}
+\lstset{language=C++}
+
+\subsection{Definiowanie konceptów}
+
+Koncepty, takie jak \verb#Equality_comparable# często można znaleźć w bibliotekach (np. w \verb#The Ranges TS#), ale koncepty można też definiować samodzielnie: \newline
+
+\begin{lstlisting}[frame=single]
+template<typename T>
+concept bool Equality_comparable = requires (T a, T b){
+   { a == b } -> bool;
+   { a != b } -> bool;
+};
+
+\end{lstlisting}
+
+Koncept ten został zdefiniowany jako szablonowa zmienna. Typ musi dostarczać operacje \verb#==# i \verb#!=#, z których każda musi zwracać wartość \verb#bool#, żeby być \verb#Equality_comparable#
+. Wyrażenie \verb#requires# pozwala na bezpośrednie wyrażenie jak typ może być użyty:
+
+\begin{itemize}
+
+\item \verb#{ a == b }#, oznajmia, że dwie zmienne typu \verb#T# powinny być porównywalne używając operatora \verb#==#
+
+\item \verb#{ a == b } -> bool# mówi że wynik takiego porównania musi być typu \verb#bool#
+
+\end{itemize}
+
+Wyrażenie \verb#requires# jest właściwie nigdy nie wykonywane. Zamiast tego kompilator patrzy na wymagania  i zwraca \verb#true# jeśli się skompilują a \verb#false# jeśli nie. To bardzo potężne ułatwienie. 
+
+\begin{lstlisting}[frame=single]
+template<typename T>
+concept bool Sequence = requires(T t) {
+   typename Value_type<T>;
+   typename Iterator_of<T>;
+   
+   { begin(t) } -> Iterator_of<T>;
+   { end(t) } -> Iterator_of<T>;
+   
+   requires Input_iterator<Iterator_of<T>>;
+   requires Same_type<Value_type<T>,
+   Value_type<Iterator_of<T>>>;
+};
+
+\end{lstlisting}
+
+Żeby być typu \verb#Sequence#:
+
+\begin{itemize}
+
+\item typ \verb#T# musi mieć dwa powiązane typy: \verb#Value_type<T># i \verb#Iterator_of<T>#. Oba typy to zwykłe \emph{aliasy szablonu}\footnote{nazwa odwołująca się do rodziny typów.}. Podanie tych typów w wyrażeniu \verb#requires# oznacza, że typ \verb#T# musi je posiadać żeby być \verb#Sequence#.
+
+\item typ \verb#T# musi mieć operacje \verb#begin()# i \verb#end()#, które zwracają odpowiednie iteratory.
+
+\item odpowiedni iterator oznacza to, że typ iteratora typu \verb#T# musi być typu \verb#Input_iterator# i typ wartości typu \verb#T# musi być taki sam jak jej wartość typu jej iteratora. \verb#Input_iterator# i \verb#Same_type# to koncepty z biblioteki.
+
+\end{itemize}
+
+Teraz w końcu możemy napisać koncept \verb#Sortable#. Żeby typ był \verb#Sortable#, powinien być sekwencją oferującą losowy dostęp i posiadać typ wartości, który wspiera porównania używające operatora \verb#<#:
+
+\begin{lstlisting}[frame=single]
+template<typename T>
+concept bool Sortable = Sequence<T> &&
+Random_access_iterator<Iterator_of<T>> &&
+Less_than_comparable<Value_type<T>>;
+\end{lstlisting}
+
+\verb#Random_access_iterator# i \verb#Less_than_comparable# są zdefiniowane analogicznie do \verb#Equality_comparable#
+
+Często, wymagane są relacje pomiędzy konceptami. Np. koncept \newline \verb#Equality_comparable# jest zdefiniwoany by wymagał jeden typ. Można zdefiniować ten koncept by radził sobie z dwoma typami:
+
+\begin{lstlisting}[frame=single]
+template<typename T, typename U>
+concept bool Equality_comparable = requires(T a, U b){
+   { a == b } -> bool;
+   { a != b } -> bool;
+   { b == a } -> bool;
+   { b != a } -> bool;
+};
+\end{lstlisting}
+
+To pozwala na porównywanie zmiennych typu \verb#int# z \verb#double# i \verb#string# z \verb#char*#, ale nie \verb#int# z \verb#string#.
+
+\end{document}

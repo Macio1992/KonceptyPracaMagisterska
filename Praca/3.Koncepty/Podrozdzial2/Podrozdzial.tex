@@ -1,0 +1,27 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+
+\begin{document}
+\lstset{language=C++}
+
+\subsection{System konceptów}
+
+Reprezentacja definicji szablonu w C++ to zazwyczaj \emph{drzewo wyprowadzania}\footnote{(ang. Parse Tree) - uporządkowane, zakorzenione drzewo, które reprezentuje strukturę składniową łańcucha znakowego zgodnie z gramatyką bezkontekstową. Zwane również drzewem składniowym}. Używając identycznych technik kompilatora, możemy przekonwertować koncepty do takich drzew. Posiadając to, sprawdzanie konceptów możemy zaimplementować jako \emph{abstrakcyjne drzewo dopasowań}. Wygodnym sposobem implementowania takiego dopasowywania jest generowanie i porównywanie zestawów wymaganych funkcji i typów (zwane \emph{zestawami ograniczeń}) z definicji szablonów i konceptów.
+
+Definicja konceptu to zestaw równań \emph{drzewa AST}\footnote{(ang. Abstract Syntax Tree) Drzewo składniowe, drzewo składni abstrakcyjnej - drzewo etykietowane, wynik przeprowadzenia analizy składniowej zzdania (słowa) zgodnie z pewną gramatyką.} z założeniami typu. \newline
+
+Koncepty dają dwa zamysły:
+
+\begin{enumerate}
+
+\item w \emph{definicjach szablonu}, koncepty działają jak reguły osądzania typowania. Jeśli \emph{drzewo AST} zależy od parametrów szablonu i nie może być rozwiązane przez otaczające środowisko typowania, wtedy musi się pojawić w strzegących ciałach konceptów. Takie zależne \emph{drzewa AST} są domniemanymi parametrami konceptów i zostaną rozwiązane przez sprawdzanie konceptów w momentach użycia.
+
+\item w \emph{użyciach szablonów}, koncepty działają jak zestawy predykatów, które argumenty szablonu muszą spełniać. Sprawdzanie konceptów rozwiązuje domniemane parametry w momentach inicjalizacji.
+
+\end{enumerate}
+
+Jeśli zestaw konceptów definicji szablonu określa zbyt mało operacji, kompilacja szablonu nie powiedzie się z powodu sprawdzania konceptów. Szablon będzie w takim wypadu "prawie ograniczony". Odwrotnie, jeśli zestaw konceptów definicji szablonu określa więcej operacji niż potrzeba, niektóre inne uzasadnione użycia mogą również zawieźć sprawdzanie konceptów. Szablon będzie wtedy "nad ograniczony". Przez "inne uzasadnione" rozumie się, że sprawdzanie typów udałoby się w przypadku braku sprawdzania konceptów.
+
+\end{document}

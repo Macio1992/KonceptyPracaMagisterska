@@ -1,0 +1,102 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+
+\linespread{1.3}
+
+\begin{document}
+\lstset{language=C++}
+
+\subsection{Semantyczne udoskonalanie}
+
+W niektórych przypadkach udoskonalenia są czysto semantyczne. Nie dostarczają operacji, które kompilator może wykorzystać do odróżnienia przeciążeń. W rzeczywistości ten problem pojawia się w standardowej hierarchii iteratorów: \emph{iteratory input} i \emph{iteratory forward} dzielą dokładnie te same zestawy operacji.
+
+Pojęciowo \emph{iterator input} jest iteratorem reprezentującym pozycję w strumieniu wejściowym. Ponieważ jest zwiększany, poprzednie elementy są konsumowane. Oznacza to, że wcześniej dostępne elementy nie są już dostępne przez iterator lub dowolną jego kopię. W przeciwieństwie do tego, \emph{iterator forward} nie konsumuje elementów przy zwiększaniu. Wcześniej dostępne elementy mogą być uzyskane dzięki kopiom. Jest to zazwyczaj określane mianem właściwości \emph{multipass}. Jest to czysto semantyczna własność.
+
+\begin{lstlisting}[frame=single]
+template<typename I>
+concept bool Input_iterator() {
+  return Regular<I>() && requires (I i) {
+    typename value_type_t<I>;
+    { *i } -> value_type_t<I> const&;
+    { ++i } -> I&;
+  };
+}
+
+template<typename I>
+concept bool Forward_iterator() {
+  return Input_iterator<I>();
+}
+\end{lstlisting}
+
+Wszystkie wymagania składniowe są zdefiniowane w koncepcie \verb#Input_i-# \newline \verb#terator#. Koncept \verb#Forward_iterator# zawiera tylko \verb#Input_iterators#. Innymi słowy, zestaw wymagań \verb#Forward_iterator# jest dokładnie taki sam, jak \verb#Input_iterator#. Jeśli próbujemy zdefiniować przeciążenia wymagające tych konceptów, wynik byłby zawsze dwuznaczny (ani lepszy od drugiego). Zróżnicowanie pomiędzy tymi konceptami jest tak naprawdę przydatny. Na przykład jeden z konstruktorów \verb#vector# ma bardziej wydajną implementację \emph{iteratorów forward} niż dla \emph{iteratorów input}.
+
+\begin{lstlisting}[frame=single]
+template<Object_type T, Allocator_of<T> A>
+class vector {
+  template<Input_iterator I>
+    requires Same_as<T, value_type_t<I>>()
+  vector(I first, I limit) {
+    for ( ; first != limit; ++first)
+      push_back(*first);
+  }
+
+  template<Forward_iterator I>
+    requires Same_as<T, value_type_t<I>>()
+  vector::vector(I first, I limit) {
+    reserve(distance(first, limit)); 
+      // 1 allocation
+    insert(begin(), first, limit);
+  }
+  // ...
+\end{lstlisting}
+
+To nie zadziała, jeśli kompilator nie może odróżnić \verb#Forward_iterator# z \verb#Input_iterator#. 
+
+Można to naprawić dodając nowe wymagania składniowe do \verb#Forward_iterator#, które odnoszą się do jego rangi w hierarchii iteratorów. To tradycyjnie zostało zrobione przy użyciu \emph{tag dispatch}. Łączenie \emph{etykiety klasy}\footnote{(ang. tag class) Pusta klasa w hierarchii dziedziczenia} z typem iteratora w celu wybrania odpowiedniego przeciążenia. Ten skojarzony typ to \verb#iterator_category#. Zmieniony \verb#Forward_iterator# może wyglądać tak:
+
+\begin{lstlisting}[frame=single]
+template<typename I>
+  concept bool Forward_iterator() {
+    return Input_iterator<I>() && requires {
+      typename iterator_category_t<I>;
+      requires Derived_from<I,
+        forward_iterator_tag>();
+    };
+  }
+\end{lstlisting}
+
+Dzięki tej definicji wymagania \verb#Forward_iterator# zaliczają wymagania \verb#Input_iterator#, a kompilator może rozróżnić powyższe przeciążenia. Jako dodatkowa zaleta, używanie \emph{iteratorów random access} będzie jeszcze bardziej wydajne bo \verb#distance()# wymaga tylko jednej operacji całkowitej.
+
+Jako inny przykład, \emph{C++17} dodaje nową kategorię iteratorów: \emph{iteratory contiguous}. \emph{Iterator contiguous} jest \emph{iteratorem random access}, którego obiekty odwoławcze są przydzielane w sąsiednich obszarach pamięci, których adresy rosną wraz z każdym przyrostem iteratora. Powoduje to otwarcie drzwi na wiele optymalizacji pamięci na niższym poziomie. Jest to oczywiście zupełnie czysta semantyka. Jeśli chcemy zdefiniować nowy koncept, musimy ją odróżnić od \verb#Random_access_iterator#. Na szczęście właśnie zdefiniowaliśmy maszynę, aby to zrobić.
+
+\begin{lstlisting}[frame=single]
+template<typename I>
+concept bool Contiguous_iterator() {
+  return Random_access_iterator<I>() && requires {
+    requires Derived_from<I,
+    contiguous_iterator_tag>();
+  };
+}
+\end{lstlisting}
+
+%Etykiety klasy nie są jedynym sposobem na rozwiązanie tego problemu. Używana jest istniejąca standardowa infrastruktura biblioteki. W rzeczywistości jedynymi konceptami wymagającymi tych klas znaczników są \verb#Forward_iterator# i \verb#Contiguous_iterator#. Nie potrzebujemy żadnej innej klasy tagów. Możemy po prostu użyć \emph{associated type trait}, zmiennej szablonu lub nawet dodatkowej operacji. Innymi słowy, możemy zrobić coś podobnego do poniższego kodu dla \emph{iteratorów forward}.
+
+%begin{lstlisting}[frame=single]
+%template<typename T>
+%constexpr bool is_forward_iterator_v = false;
+
+%template<typename T>
+%constexpr bool is_forward_iterator_v<T*> = true;
+
+%template<typename I>
+%concept bool Forward_iterator() {
+ % return Input_iterator<I>() &&
+  %  is_forward_iterator_v<T*>;
+%}
+%end{lstlisting}
+
+%Wszystkie te podejścia dałyby ten sam wynik; zdolność kompilatora do odróżniania przeładowań wymagających tych konceptów. Zgodnie z ogólną zasadą, ta technika powinna być używana tylko do różnicowania pojęć, które różnią się tylko w ich semantyce. Preferuj definiowanie pojęć tak, aby ich interfejsy odzwierciedlały ich różne semantyki.
+
+\end{document}

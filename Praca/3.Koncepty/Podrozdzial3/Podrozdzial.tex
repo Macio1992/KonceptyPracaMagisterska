@@ -1,0 +1,57 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+
+\begin{document}
+\lstset{language=C++}
+
+\subsection{Definicja konceptu}
+
+Rozróżniamy dwa rodzaje konceptów:\newline\newline
+\noindent\textbf{Zmienna konceptowa} - jest typem czasu kompilacji i nie niesie za sobą żadnych kosztów czasu wykonania.\newline
+
+\noindent Najprostsza forma zmiennej konceptowej:
+\begin{lstlisting}[frame=single]
+template<template T>
+concept bool zmienna_konceptowa = true;
+\end{lstlisting}
+
+Taka zmienna nie może być zadeklarowana z jakimkolwiek innym typem niż \verb#bool# oraz bez inicjalizatora. Błąd pojawi się też, gdy inicjalizatorem nie będzie ograniczone wyrażenie.
+
+\noindent Przykład użycia:
+\begin{lstlisting}[frame=single]
+template<template T>
+requires zmienna_konceptowa<T>
+void f(T t){
+   std::cout << t << "\n";
+}
+\end{lstlisting}
+
+\noindent\textbf{Funkcja konceptowa} - wygląda i zachowuje się jak zwykła funkcja.\newline
+\begin{lstlisting}[frame=single]
+template<template T>
+concept bool funkcja_konceptowa(){
+   return true;
+}
+\end{lstlisting}
+
+Funkcja konceptowa nie może:
+\begin{itemize}
+\item być zadeklarowana z żadnym specyfikatorem funkcji w deklaracji
+\item zwracać żadnego innego typu niż \verb#bool#
+\item mieć żadnych elementów w liście parametrów
+\item mieć innego ciała niż \verb#{ return E; }#, gdzie \verb#E# to wyrażenie ograniczone
+\end{itemize}
+
+\newpage
+\noindent Przykład użycia:
+\begin{lstlisting}[frame=single]
+template<template T>
+requires funkcja_konceptowa<T>()
+void f(T t){
+   std::cout << t << "\n";
+}
+\end{lstlisting}
+
+\end{document}

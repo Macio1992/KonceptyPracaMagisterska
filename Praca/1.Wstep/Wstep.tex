@@ -1,0 +1,23 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+\usepackage{standalone}
+
+\begin{document}
+\lstset{language=C++}
+
+\section*{Wstęp}
+
+Pomysł ograniczania argumentów szablonów jest tak stary jak same szablony. Ale dopiero z początkiem dwudziestego pierwszego wieku zaczęły się poważne prace udoskonalające język \emph{C++}, aby zapewnić te możliwości. Te prace ostatecznie dały rezultat w postaci \emph{konceptów C++0x}. Rozwój tych funkcjonalności i ich wdrożenie do biblioteki standardowej \emph{C++} były głównymi tematami \emph{Komisji Standardu C++}\footnote{(ang. C++ Standards Committee) znana również pod nazwą "ISO JTC1/SC22/WG21". Składa się z akredytowanych ekspertów z krajów członkowskich, którzy są zainteresowani pracą nad C++} dla \emph{C++11}. Te cechy zostały ostatecznie usunięte z powodu istotnych nierozwiązanych kwestii i bardziej rygorystycznego terminu publikacji.
+
+W 2010 roku wznowiono prace nad konceptami (bez udziału komisji). Andrew Sutton i Bjarne Stroustrup opublikowali dokument omawiający jak zminimalizować ilość konceptów potrzebnych do określania części biblioteki standardowej, a grupa z Uniwersytetu w Indianie zainicjowała prace nad nową implementacją. Potem wspólnie z Alexem Stepanovem (twórcą \emph{biblioteki STL}\footnote{(ang. Standard Template Library) biblioteka C++ zawierająca algorytmy, kontenery, iteratory oraz inne konstrukcje w formie szablonów}) stworzyli raport, w którym przedstawili w pełni ograniczone algorytmy biblioteki \emph{STL} i zasugerowali projekt języka, który mógłby wyrazić te ograniczenia. Próbowano zaprojektować minimalny zestaw funkcji językowych, które umożliwiłyby użytkownikom ograniczanie szablonów. Z tych prób narodziło się rozszerzenie języka, zwane \emph{Concepts Lite}.
+
+%Koncepty nie zostały włączone w \emph{C++17}. Niektórzy członkowie komisji uważali, że nie minęło %wystarczająco dużo czasu od publikacji specyfikacji technicznej, żeby sprawdzić czy projekt jest %wystarczająco dobry, a wielu z nich było niezdecydowanych.
+
+Koncepty są jedną z najbardziej przeanalizowanych, zaproponowanych funkcjonalności \emph{C++}. Powstały by wspierać programowanie generyczne. Proponowano różne ich projekty, ostatni to \emph{Concepts TS}\footnote{(ang. The Concepts Technical Specification) Specyfikacja techniczna konceptów}) opublikowany w październiku 2015 jako \emph{ISO C++14 Technical Specification}. Ta specyfikacja została wdrożona i jest dostępna w gałęzi \emph{GNU Compiler Collection (GCC)}\footnote{zestaw kompilatorów do różnych języków programowania} od wielu lat i została dostarczana do produkcji jako część oficjalnych wydań \emph{GCC} od czasu wydania \emph{GCC-6.0}. Praca ta jest częściowo finansowana przez \emph{NSF}\footnote{(ang. The National Science Foundation) amerykańska agencja rządowa wspierająca podstawowe badania naukowe i edukacje we wszystkich niemedycznych dziedzinach nauki i sztuki.} z wyraźnym celem wprowadzenia programowania generycznego do głównego nurtu języku \emph{C++}. Jak każda funkcjonalność języka z potencjałem zmiany skali w jakiej piszemy programy, jak myślimy o programach, jak je organizujemy, zgromadziły wiele opinii i sugestii na przestrzeni lat.
+
+
+\addcontentsline{toc}{section}{Wstęp}
+
+\end{document}

@@ -1,0 +1,37 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+
+\begin{document}
+\lstset{language=C++}
+
+\subsection{Notacja skrótowa}
+Gdy chcemy podkreślić, że argument szablonu ma być sekwencją, piszemy:
+
+\begin{lstlisting}[frame=single]
+template<typename Seq>
+   requires Sequence<Seq>
+void algo(Seq &s);
+
+\end{lstlisting}
+
+To oznacza, że potrzebujemy argumentu typu \verb#Seq#, który musi być typu \verb#Sequence#, lub innymi słowy: szablon przyjmuje argument typu, który musi być typu \verb#Sequence#. Możemy to uprościć:
+
+\begin{lstlisting}[frame=single]
+template<Sequence Seq>
+void algo(Seq &s);
+
+\end{lstlisting}
+
+To znaczy dokładnie to samo co dłuższa wersja, ale jest krótsza i lepiej wygląda. Używamy tej notacji dla konceptów z jednym argumentem. Np. moglibyśmy uprościć funkcję \verb#szukaj#: \newline
+
+\begin{lstlisting}[frame=single]
+template<Sequence S, typename T>
+   requires Equality_comparable<Value_type<S>, T>
+Iterator_of<S> szukaj(S &seq, const T &value);
+\end{lstlisting}
+
+Upraszcza to składnię języka. Sprawia, że nie jest zbyt zagmatwana.
+
+\end{document}

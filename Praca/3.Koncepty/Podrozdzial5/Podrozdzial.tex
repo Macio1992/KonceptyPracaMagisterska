@@ -1,0 +1,42 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+
+\begin{document}
+\lstset{language=C++}
+
+\subsection{Określanie interfejsu szablonu}
+
+\begin{lstlisting}[frame=single]
+template<typename S, typename T>
+   requires Sequence<S> && 
+   Equality_comparable<Value_type<S>, T>
+Iterator_of<S> szukaj(S &seq, const T &value);
+\end{lstlisting}
+
+Powyższy szablon przyjmuje dwa argumenty typu szablonu. Pierwszy argument typu musi być typu \verb#Sequence# i musimy być w stanie porównywać elementy sekwencji ze zmienną \verb#value# używając operatora \verb#==# (stąd \verb#Equality_comparable<Value_type<S>, T>#). Funkcja \verb#szukaj# przyjmuje sekwencję przez referencję i \verb#value# do znalezienia jako referencję \verb#const#. Zwraca iterator.
+
+Sekwencja musi posiadać \verb#begin()# i \verb#end()#. Koncept \verb#Equality_comparable# jest zaproponowany jako koncept standardowej biblioteki. Wymaga by jego argument dostarczał operatory \verb#==# i \verb#!=#. Ten koncept przyjmuje dwa argumenty. Wiele konceptów przyjmuje więcej niż jeden argument. Koncepty mogą opisywać nie tylko typy, ale również związki między typami. \newline
+
+Użycie funkcji \verb#szukaj#: \newline
+
+\begin{lstlisting}[frame=single]
+void test(vector<string> &v, list<double> &list){
+   auto a0 = szukaj(v, "test");(1)
+   auto p1 = szukaj(v, 0.7);(2)
+   auto p2 = szukaj(list, 0.7);(3)
+   auto p3 = szukaj(list, "test");(4)
+   
+   if(a0 != v.end()){
+     //Znaleziono "test"
+   }
+}
+\end{lstlisting}
+
+1) OK
+2) Błąd: nie można porównać string do double
+3) OK
+4) Błąd: nie można porównać double ze string
+
+\end{document}

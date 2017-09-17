@@ -1,0 +1,71 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+\usepackage{standalone}
+
+\begin{document}
+\lstset{language=C++}
+
+\section{Włączenie konceptów do standardu C++}
+
+Koncepty nie zostały włączone do standardu \emph{C++17}. Krótkie uzasadnienie jest takie, że komisja nie osiągnęła porozumienia, że koncepty (określone w specyfikacji technicznej) osiągnęły wystarczające doświadczenie w zakresie wdrożenia i użytkowania, aby być wystarczające do dopuszczenia w obecnym projekcie. Zasadniczo komisja nie powiedziała "nie", ale "jeszcze nie".
+
+Największe zastrzeżenia nie wynikały z problemów technicznych. Powstały następujące obawy:
+
+\begin{itemize}
+
+\item specyfikacja konceptów istniała w opublikowanej formie przez mniej niż cztery miesiące
+\item jedyna znana i dostępna publicznie implementacja konceptów znajduje się w nieopublikowanej wersji \emph{kompilatora GCC}
+\item implementacja \emph{kompilatora GCC} została opracowana przez tę samą osobę, która napisała specyfikację. W związku z tym implementacja jest dostępna do testowania, ale nie podjęto żadnej próby wprowadzenia w życia specyfikacji. A zatem specyfikacja nie jest przetestowana. Kilku członków komisji wskazało, że posiadanie implementacji wyprodukowanej ze specyfikacji ma decydujące znaczenie dla określenia kwestii specyfikacji.
+\item najbardziej znaczące i znane użycie konceptów jest dostępne w specyfikacji \emph{Ranges TS}. Jest kilka innych projektów eksperymentujących z konceptami, ale żaden z nich nie zbliża się do skali, której można oczekiwać gdy programiści zaczną korzystać z tej funkcjonalności. Wydajność i problemy związane z obsługą błędów przy użyciu bieżącej implementacji GCC dowodzą, że nie wykonano większej próby używania konceptów.
+\item specyfikacja konceptów nie dostarcza żadnych definicji. Niektórzy członkowie komisji kwestionują użyteczność konceptów bez dostępności biblioteki definicji konceptów, takiej jak \emph{Ranges TS}. Przyjęcie specyfikacji konceptów do \emph{C++17} bez odpowiedniej biblioteki definicji niesie ryzyko zablokowania języka bez udowodnienia, że zawiera funkcje potrzebne do wdrożenia biblioteki, które mogłyby być zaprojektowane do konceptualizacji biblioteki standardowej.
+
+\end{itemize}
+
+Obawy techniczne:
+\begin{itemize}
+
+\item koncepty zawierają nową składnię do definiowania szablonów funkcji. Skrócona deklaracja szablonu funkcji wygląda podobnie to nieszablonowej deklaracji funkcji z wyjątkiem tego, że co najmniej jeden z jej  parametrów zostanie zadeklarowany ze specyfikatorem typu zastępczego \verb#auto# albo nazwą konceptu. Obawa wynika z tego, że taka deklaracja:\newline
+\noindent \verb#void f(X x){}# \newline
+definiuje nieszablonową funkcję jeśli \verb#X# jest typem, ale definiuje szablon funkcji jeśli \verb#X# jest konceptem. To ma subtelne konsekwencje dla tego czy funkcja może być zdefiniowana w pliku nagłówkowym, czy słowo kluczowe \verb#typename# jest potrzebne by odnieść się do składowych typów typu \verb#X#, czy istnieje dokładnie jedna zmienna lub brak lub kilka dla każdej deklarowanej zmiennej lokalnej, statycznej. itd.
+
+
+\item specyfikacja konceptów zawiera również składnię szablonów wstępnych, która pozwala ominąć rozwlekłą składnię deklaracji szablonu, do której wszyscy są przyzwyczajeni jednocześnie określając ograniczenia typu. Następujący przykład deklaruje szablon funkcji \verb#f#, przyjmujący dwa parametry \verb#A# i \verb#B#, które spełniają wymagania konceptu \verb#C#: \newline
+\verb#C{ A, B } void f(A a, B b);#\newline
+Ta składnia nie jest lubiana. Wspomniano, że biblioteka \emph{Ranges TS} jej używała w pewnych miejscach a grupa pracująca nad ewolucją biblioteki zażądała żeby ją zmienić i już nigdy nie używać.
+\item Są dwie formy definiowania konceptów: funkcja i zmienna. Forma funkcji istnieje po to by wspierać przeciążanie definicji konceptów oparte na parametrach szablonu. Forma zmiennej istnieje by wspierać nieco krótsze definicje:
+
+\begin{lstlisting}[frame=single]
+//forma funkcji
+template<typename T>
+concept bool C(){
+   return ...;
+}
+
+//forma zmiennej
+template<typename T>
+concept bool C = ...;
+\end{lstlisting}
+
+Wszystkie koncepty, które można zdefiniować przy użyciu formy zmiennej można zdefiniować za pomocą formy funkcji. Stosowana forma wpływa na składnię wymaganą do oszacowania konceptu, a zatem użycie konceptu wymaga znajomości formy użytej do jego zdefiniowania. Wczesna wersja \emph{Ranges TS} używała zarówno formy zmiennej, jak i funkcji do definiowania konceptów i niespójność spowodowała wiele błędów w specyfikacji. Aktualna \emph{Ranges TS} wykorzystuje tylko formę funkcji do zdefiniowania określonych konceptów. Niektórzy członkowie komitetu uważają, że jedna forma definicji uprości język i uniknie trudności w używaniu i nauczaniu. Zapewnienie odrębnej składni definicji konceptów, a nie określenie ich w kategoriach funkcji lub zmiennych uniknęłoby również dziwnej składni \verb#concept bool#.
+
+\item została dodana możliwość używania \verb#auto# jako specyfikatora dla parametrów szablonu bez typu: \newline\newline
+\verb#template<auto V>#\newline
+\verb#constexpr auto v = V*2;#\newline
+
+Z konceptami można by ograniczyć powyższy szablon tak, że typ \verb#V# spełniałby wymagania konceptu \verb#Integral#:\newline
+\verb#template<Integral V>#\newline
+\verb#constexpr auto v = V*2;#\newline
+
+Jednak to jest ta sama składnia aktualnie używana przez \emph{Concepts TS}, do deklarowania parametrów typu szablonu ograniczonego. Jeśli \emph{Concepts TS} miały być wprowadzone, potrzebna by była inna składnia aby deklarować ograniczony parametr szablonu bez typu. Prawdopodobnie składnia stosowana przez \emph{Concepts TS} bardziej nadaje się do deklarowania parametrów szablonów bez typu, jak pokazano powyżej, ponieważ pasuje do składni stosowanej dla innych deklaracji zmiennych. To oznacza, że nowa składnia do deklarowania ograniczonych parametrów typu byłaby pożądana ze względu na spójność języka.
+
+\item Koncepty były powszechnie oczekiwane w celu uzyskania lepszych komunikatów o błędach niż obecnie są generowane, gdy pojawiają się niepowodzenie podczas tworzenia szablonów. Teoria idzie, ponieważ koncepty pozwalają odrzucić kod oparty na ograniczeniu w punkcie użycia szablonu, kompilator może po prostu zgłosić błąd ograniczenia, a nie błąd w niektórych wyrażeniach w potencjalnie głęboko zagnieżdżonym stosie instancji szablonu. Niestety okazuje się, że nie jest tak proste, a używanie konceptów skutkuje gorszymi komunikatami o błędach. Niepowodzenia ograniczeń często pojawiają się jako błędy w przeciążeniu, co powoduje potencjalnie długą listę kandydatów, z których każda ma własną listę przyczyn odrzucenia. Identyfikacja kandydata, który był przeznaczony do danego użycia, a następnie określenie, dlaczego wystąpiło niepowodzenia ograniczeń, może być gorszym doświadczeniem niż nawigowanie w stosie tworzenia instancji szablonów.
+
+\item Wielu członków komisji wyraża zaniepokojenie faktem, czy obecny projekt konceptów wystarcza jako podstawa, na której można w przyszłości wdrożyć sprawdzenie pełnej definicji szablonu. Mimo zapewnień obrońców konceptów, że takie kontrole będą możliwe, wiele pytań pozostaje bez odpowiedzi, a członkowie komitetu pozostają bez przekonania. Wydaje się mało prawdopodobne, że obawy te zostaną rozwiązane w inny sposób niż poprzez wdrożenie sprawdzania definicji.
+
+\end{itemize}
+
+Wielu wierzy, że koncepty w jakiejś formie zostaną dodane do \emph{C++19/20}.
+
+\end{document}

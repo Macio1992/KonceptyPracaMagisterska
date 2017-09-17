@@ -1,0 +1,18 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+
+\begin{document}
+
+\subsection*{Wprowadzenie}
+
+Każda szeroko używana biblioteka generyczna jest oparta na konceptach. Te koncepty można przedstawiać za pomocą specjalnie zaprojektowanych funkcji języka, tabel wymagań, komentarzy w kodzie, dokumentach projektu lub po prostu w głowach programistów. Lecz bez konceptów (formalnych czy nieformalnych), żaden kod generyczny by nie działał.
+
+Podczas badań nad konceptami dochodzono do różnych wniosków. Zastanawiano się nad wpływem konceptów na niezmienniki (czy będą wzmocnione czy osłabną), opuszczaniem operatorów czy ograniczaniu przestrzeni definicji. Z tych rozważań wywnioskowano, że pisanie generycznej biblioteki wymaga wyczerpującego wyliczania przeładowanych operacji, wsparcia konceptów dla metaprogramowania szablonów i ogromnego bezpośredniego wsparcia języka dla konceptów.
+
+Na szczęście, te podsumowanie mijają się z prawdą. Są po prostu złe. Przeważająca większość bibliotek generycznych, w tym oryginalna wersja biblioteki \emph{STL}\footnote{Standard Template Library}, została napisana bez wsparcia języka dla konceptów i używana bez mechanizmów wykonawczych. Podczas rozwoju bibliotek, ich autorzy nie rozważali setki różnych konceptów. Raczej, generyczne komponenty tych bibliotek zostały zapisane w małym zbiorze wyidealizowanych abstrakcji.
+
+\addcontentsline{toc}{subsection}{Wprowadzenie}
+
+\end{document}

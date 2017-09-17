@@ -1,0 +1,161 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+
+\linespread{1.3}
+
+\begin{document}
+\lstset{language=C++}
+
+\subsection{Specjalizacja algorytmów}
+
+W niektórych przypadkach możemy definiować struktury danych z rozszerzonym zestawem właściwości lub operacji, które mogą być wykorzystane do definiowania bardziej dopuszczalnych lub bardziej wydajnych wersji algorytmu. Ten pomysł jest realizowany przez hierarchię iteratorów biblioteki standardowej.
+
+\emph{Iteratory forward} mogą być użyte do przechodzenia przez sekwencję w jednym kierunku (do przodu) poprzez przesuwanie się po jednym elemencie naraz, używając operatora \verb#++#.\newline
+
+\noindent Prosty koncept iteratora forward:\newline
+
+\begin{lstlisting}[frame=single]
+template<typename I>
+concept bool Forward_iterator() {
+  return Regular<I>() && requires (I i) {
+    typename value_type_t<I>;
+    { *i } -> const value_type_t<I>&;
+    { ++i } -> I&;
+  };
+}
+\end{lstlisting}
+
+Opierając się na tym koncepcie, możemy zdefiniować dwa użyteczne algorytmy. Jeden, który przechodzi przez iterator wielokrotnymi krokami używając pętli i drugi, który oblicza liczbę kroków między dwoma iteratorami.
+
+\begin{lstlisting}[frame=single]
+template<Forward_iterator I>
+void advance(I& iter, int n) {
+  //(1)
+  while (n != 0) { ++iter; --n; }
+}
+template<Forward_iterator I>
+int distance(I first, I limit) {
+  (2)
+  for (int n = 0; first != limit; ++first, ++n);
+  return n;
+}
+\end{lstlisting}
+
+(1) - warunek wstępny: \verb#n >= 0# (2) - warunek wstępny: \verb#limit# jest osiągalny z \verb#first#
+
+Parametr \verb#n# funkcji \verb#advance# musi być nieujemny bo \emph{iteratory forward} nie mogą iść do tyłu. Ale \emph{iterator bidirectional} może być użyty do wędrowania po sekwencji w oba kierunki (do przodu i do tyłu) poprzez przechodzenie po elementach naraz używając operatorów \verb#++# lub \verb#--#.
+
+\begin{lstlisting}[frame=single]
+template<typename I>
+  concept bool Bidirectional_iterator() {
+    return Forward_iterator<I>() && requires (I i)
+    {
+      { --i } -> I&;
+    };
+  }
+\end{lstlisting}
+
+Koncept \verb#Bidirectional_iterator# jest zbudowany na podstawie \newline \verb#Forward_iterator#. Czyli \emph{iterator bidirectional} jest \emph{iteratorem forward}, który również może poruszać się do tyłu. Zestaw wymagań konceptu \verb#Bidirecti-# \newline \verb#onal_iterator# całkowicie zalicza się do zestawu konceptu \verb#Forward_iterator#. W wyniku czego, za każdym razem gdy \verb#Bidirectional_iterator<X># jest prawdziwe (dla wszystkich \verb#X#), \verb#Forward_iterator<X># musi tez być prawdziwy. W tym przypadku mówimy, że koncept \verb#Bidirectional_iterator# \emph{udoskonala}\footnote{(ang. refine)} koncept \verb#Forward_iterator#.
+
+To \emph{udoskonalenie} pozwala nam zdefiniować nową wersję \verb#advance()#, która może poruszać się w oba kierunki.
+
+\begin{lstlisting}[frame=single]
+template<Bidirectional_iterator I>
+  void advance(I& iter, int n) {
+    if (n > 0)
+      while (n != 0) { ++iter; --n; }
+    else if (n < 0)
+      while (n != 0) { --iter; ++n; }
+  }
+\end{lstlisting}
+
+Koncept \verb#Bidirectional_iterator# pozwala nam uspokoić warunek wstępny funkcji \verb#advance()#, dzięki czemu możemy użyć ujemnych wartości \verb#n#. Z drugiej strony \verb#Bidirectional_iterator# nie zawiera żadnych nowych informacji, które mogłyby pomóc nam ulepszyć \verb#distance()#. Możemy jednak zapewnić optymalizację zarówno \verb#advance()# jak i \verb#distance()# dla \emph{iteratorów random access}. Te iteratory mogą być użyte do przebycia sekwencji w dwóch kierunkach, ale mogą posuwać się do wielu elementów w jednym kroku używając operatorów + = lub - =. Możemy również policzyć odległość między dwoma iteratorami, odejmując je.
+
+\begin{lstlisting}[frame=single]
+template<typename I>
+  concept bool Random_access_iterator() {
+    return Bidirectional_iterator<I>() && 
+      requires (I i, int n) {
+      { i += n } -> I&;
+      { i -= n } -> I&;
+      { i - i } -> int;
+    };
+  }
+\end{lstlisting}
+
+Koncept \verb#Random_access_iterator# udoskonala koncept \verb#Bidirectional-# \newline \verb#_iterator#. Dodaje trzy nowe wymagane operacje. Dzięki tym operacjom możemy konstruować zoptymalizowane wersje \verb#advance()# i \verb#distance()#, które nie wymagają pętli.
+
+\begin{lstlisting}[frame=single]
+template<Random_access_iterator I>
+void advance(I& iter, int n) {
+   iter += n;
+}
+template<Random_access_iterator I>
+int distance(I first, I limit) {
+   return limit - first;
+}
+\end{lstlisting}
+
+Te algorytmy można używać do zdefiniowania dużej liczby użytecznych operacji.
+
+\begin{lstlisting}[frame=single]
+template<Forward_iterator I, Ordered T>
+  requires Same_as<T, value_type_t<I>>()
+bool binary_search(I first, I limit, T const& value) {
+  if (first == limit)
+    return false;
+  auto mid = first;
+  advance(mid, distance(first, limit) / 2);
+  if (value < *mid)
+    return search(first, mid, value);
+  else if (*mid < value)
+    return search(++mid, limit, value);
+  else
+    return true;
+}
+
+\end{lstlisting}
+
+Algorytm jest definiowany dla iteratorów \emph{forward}, ale oczywiście może być używany również do \emph{bidirectional} i \emph{random access}. Wersje \verb#advance()# i \verb#distance()#, które są używane, zależą od typu iteratora przekazanego do algorytmu. W przypadku \emph{iteratorów forward} i \emph{bidirectional}, algorytm jest liniowy w zakresie wielkości wejściowych. W przypadku \emph{iteratorów random access} algorytm jest znacznie szybszy, ponieważ \verb#distance()# i \verb#advance()# nie wymagają dodatkowych przejazdów sekwencji wejściowej.
+
+Zdolność do specjalizacji algorytmów według ograniczeń i typów ma decydujące znaczenie dla wydajności bibliotek generycznych języka \emph{C++}. Koncepty znacznie ułatwiają definiowanie i wykorzystywanie tych specjalizacji. Ale jak kompilator wie, które przeciążenie wybrać?
+
+W poprzednich przykładach wykorzystujących sekwencje i kontenery asocjacyjne, tylko jedno przeciążenie funkcji \verb#czyIstnieje()# było zawsze opłacalne, ponieważ argumenty były jednego lub drugiego, ale nie obu. Jeśli jednak wywołamy \verb#binarny_search()# z \emph{iteratorami random access}, powiedzmy, że są to wskaźniki do tablicy, wszystkie trzy przeciążenia \verb#advance()# i oba przeciążenia \verb#distance()# będą opłacalne. To ma sens. Każda implementacja tych funkcji jest doskonale zdefiniowana dla wskaźników.
+
+W takim przypadku kompilator musi wybrać najlepszego spośród potencjalnych kandydatów. Ogólnie rzecz ujmując, \emph{C++} uważa, że jedna z funkcji jest lepsza od innej za pomocą następujących reguł:
+
+\begin{enumerate}
+\item Funkcje wymagające mniejszych lub "tańszych" konwersji argumentów są lepsze niż te wymagające większych lub bardziej kosztownych konwersji.
+
+\item Funkcje nieszablonowe są lepsze niż specjalizacje szablonów funkcji.
+
+\item Jedna specjalizacja szablonu funkcji jest lepsza od innej, jej typy parametrów są bardziej wyspecjalizowane. Na przykład \verb#T*# jest bardziej wyspecjalizowany niż \verb#T#, i tak samo \verb#vector<T>#, ale \verb#T*# nie jest bardziej wyspecjalizowany niż \verb#vector<T>#, ani też nie jest przeciwnie.
+
+\textbf{Specyfikacja techniczna konceptów dodaje jeszcze jedną zasadę:}
+
+\item Jeśli dwie funkcje nie mogą być sortowane, ponieważ mają równoważne konwersje lub są specjalizacjami szablonów funkcji o równoważnych typach parametrów, tym lepsza jest bardziej ograniczona. Są to najmniej ograniczone funkcje nie ograniczone. 
+
+\end{enumerate}
+
+Innymi słowy, ograniczenia działają jako łącznik dla zwykłych reguł przeciążania w \emph{C++}. Kolejność ograniczeń (bardziej ograniczona) zależy zasadniczo od porównania zestawów wymagań dla każdego szablonu w celu określenia, czy jest to ścisły nadzbiór drugiego. W celu porównania ograniczeń, kompilator najpierw analizuje powiązane ograniczenia funkcji w celu zbudowania zestawu tak zwanych ograniczeń atomowych. Są \emph{atomowe}, ponieważ nie mogą być podzielone na mniejsze części. Ograniczenia atomowe zawierają wyrażenia stałe \emph{C++} (np. \emph{type traits}) i wymagania w wyrażeniu \verb#requires#.
+
+Na przykład, w rozwiązaniu \verb#advance()#, gdy jest wywołany z \emph{iteratorem random access}, zestaw ograniczeń dla każdego przeciążenia to:
+
+\noindent \begin{tabular}{|p{5cm}|p{7cm}|p{1cm}|} \hline
+  \hline 
+  Koncept & Atomowe wymagania \\
+  \hline 
+  \verb#Forward_iterator# & \verb#value_type_t<I># \verb#{ *i } -> value_type_t<I> const&# \verb#{ ++i } -> I&# \\
+  \hline
+  \verb#Bidirectional_iterator# & \verb#value_type_t<I># \verb#{ *i } -> value_type_t<I> const&# \verb#{ ++i } -> I&# \newline \verb#{ --i } -> I&# \\
+  \hline
+  \verb#Random_access_iterator# & \verb#value_type_t<I># \verb#{ *i } -> value_type_t<I> const&# \verb#{ ++i } -> I&# \newline \verb#{ --i } -> I&# \newline \verb#{ i += n } -> I&# \newline \verb#{ i -= n } -> I&# \newline \verb#{ i - j } -> int# \\
+  \hline
+  
+\end{tabular} \newline
+
+Dla zwięzłości wyłączyłem ograniczenie \verb#Regular<I># pojawiające się w \verb#Forward_iterator#, ponieważ on(i jego wymagania) są wspólne dla wszystkich konceptów iterujących. Porównując powyższe stwierdzimy, że \verb#Bidirec-# \newline \verb#tional_iterator# ma ścisły nadzbiór wymagań \verb#Forward_iterator#, a \verb#Rand-# \newline \verb#om_access_iterator# ma ścisły nadzbiór wymagań \verb#Bidirectional_iterator#. Z tego względu \verb#Random_access_iterator# jest najbardziej ograniczony i to przeciążenie zostało wybrane. Nowa reguła przeciążania nie gwarantuje, że rozwiązanie przeciążenia odniesie sukces. W szczególności, jeśli dwóch realnych kandydatów ma nakładające się lub logicznie równoważne ograniczenia, rozwiązanie będzie niejednoznaczna. Jest kilka powodów, dla których to miałoby się zdarzyć.
+
+\end{document}

@@ -1,0 +1,27 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+
+\begin{document}
+\lstset{language=C++}
+
+\subsection{Używanie konceptów}
+
+Koncept to predykat czasu kompilacji (coś co zwraca wartość boolowską). Np. argument typu szablonu \verb#T# mógłby mieć wymagania żeby być:
+
+\begin{itemize}
+
+\item iteratorem \verb#Iterator<T>#
+
+\item iteratorem losowego dostępu \verb#Random_access_iterator<T>#
+
+\item liczbą: \verb#Number<T>#
+
+\end{itemize}
+
+Notacja \verb#C<T>#, gdzie \verb#C# to koncept a \verb#T# to typ, to wyrażenie znaczące "prawda jeśli \verb#T# spełnia wszystkie wymagania C, a nieprawda w przeciwnym wypadku."
+
+Podobnie, możemy określić, że zestaw argumentów szablonu musi spełniać predykat, np. \verb#Mergeable<In1, In2, Out>#. Taki predykaty wielu typów są niezbędne do opisywania biblioteki STL i wielu innych. Są bardzo ekspresywne i łatwo kompilowalne (tańsze niż obejścia metaprogramowania szablonów). Można oczywiście definiować własne koncepty i można tworzyć biblioteki konceptów. Koncepty pozwalają na przeciążanie i eliminują potrzebę wielokrotnego doraźnego metaprogramowania i kodu \emph{scaffoldingu}\footnote{metaprogramistyczna metoda budowania aplikacji bazodanowych. To technika wspierana przez niektóre frameworki MVC, w których programista może napisać specyfikację opisującą sposób wykorzystania bazy danych aplikacji. Kompilator używa tej specyfikacji, aby wygenerować kod, który aplikacja może wykorzystać do odczytu, tworzenia, aktualizacji i usuwania wpisów bazy danych } z metaprogramowania, co znacznie upraszcza metaprogramowanie, a także programowanie generyczne.
+
+\end{document}

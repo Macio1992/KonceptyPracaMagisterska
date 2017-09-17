@@ -1,0 +1,97 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+
+\begin{document}
+\lstset{language=C++}
+
+\subsection{Ulepszenie programowania generycznego}
+
+Specyfikacja konceptów zawiera wiele ulepszeń, by lepiej wspierać programowanie generyczne przez:
+\begin{itemize}
+
+\item umożliwienie wyraźnego określania ograniczeń argumentów szablonu jako części deklaracji szablonów
+\item wsparcie możliwości przeciążania szablonów funkcji i częściowego określania szablonów klas i zmiennych opartych na tych ograniczeniach
+\item dostarczenie składni do definiowania konceptów i wymagań narzuconych na argumenty szablonu
+\item ujednolicenie \verb#auto#\footnote{Słowo kluczowe wg standardu \emph{C++11}, oznaczające zastępczy typ zmiennej, który zostanie wydedukowany na podstawie wartości za pomocą której zmienna zostanie zainicjalizowana.} i konceptów w celu zapewnienia jednolitej i dostępnej notacji dla programowania ogólnego
+\item radykalną poprawę jakości wiadomości błędów wynikających z niewłaściwego wykorzystania szablonów
+\item osiągnięcie tego wszystkiego bez żadnego narzucania jakichkolwiek dodatkowych zasobów ani znacznego wzrostu czasu kompilacji, bez ograniczania tego, co można wyrazić przy użyciu szablonów
+
+\end{itemize}
+
+\noindent\verb#double pierwiastek(double d);# \newline
+\verb#double d = 7;# \newline
+\verb#double d2 = pierwiastek(d);# \newline
+\verb#vector<string> v = {"jeden", "dwa"};# \newline
+\verb#double d3 = pierwiastek(v);# \newline
+
+Funkcja \verb#pierwiastek#, która jako parametr przyjmuje zmienną typu \verb#double#. Jeśli zostanie jej dostarczony taki typ, wszystko będzie w porządku, ale jeśli inny, od razu kompilator wyprodukuje pomocną wiadomość błędu.\newline
+
+Kod funkcji \verb#sortuj# zależy od różnych właściwości typu \verb#T#, takiej jak posiadanie operatora \verb#[]#.
+\newpage
+
+\begin{lstlisting}[frame=single]
+template<class T>
+void sortuj(T &c){
+   //kod sortowania
+}
+\end{lstlisting}
+
+\noindent \verb#vector<string> v = {"jeden", "dwa"};# \newline
+\verb#sortuj(v);# \newline
+\verb#//OK: zmienna v ma wszystkie syntaktyczne właściwości wymagane# \newline
+\verb#przez funkcję sort# \newline\newline
+\verb#double d = 7;# \newline
+\verb#sortuj(d);# \newline
+\verb#//Błąd: zmienna d nie ma operatora []#\newline
+
+\noindent Pojawiło się kilka problemów:
+\begin{itemize}
+
+\item wiadomość błędu jest niejednoznaczna i daleko jej do precyzyjnej i pomocnej, tak jak : "Błąd: zmienna d nie ma operatora []"
+
+\item aby użyć funkcji \verb#sortuj#, musimy dostarczyć jej definicję, a nie tylko deklaracje. Jest to różnica w sposobie pisania zwykłego kodu i zmienia się model organizowania kodu
+
+\item wymagania funkcji dotyczące typu argumentu są domniemane w ciałach ich funkcji
+
+\item wiadomość błędu funkcji pojawi się tylko podczas inicjalizacji szablonu, a to może się zdarzyć bardzo długo po momencie wywołania
+
+\item Notacja \verb#template<typename T># jest powtarzalna, bardzo nielubiana.
+
+\end{itemize}
+
+Używając konceptu, możemy dotrzeć do źródła problemu, poprzez poprawne określenie wymagań argumentów szablonu. Fragment kodu używającego konceptu \verb#Sortable#:\newline
+
+\noindent \verb#void sortuj(Sortable &c);//(1)#\newline
+\verb#vector<string> v = {"jeden", "dwa"};#\newline
+\verb#sortuj(v);//(2)# \newline
+\verb#double d = 7;# \newline
+\verb#sortuj(d);//(3)# \newline
+
+\noindent (1) - akceptuj jakąkolwiek zmienną \verb#c#, która jest typu \verb#Sortable# \newline
+(2) - OK: \verb#v# jest kontenerem typu \verb#Sortable# \newline
+(3) - Błąd: d nie jest \verb#Sortable# (\verb#double# nie dostarcza operatora [], itd.) \newline
+
+Kod jest analogiczny do przykładu \verb#pierwiastek#. Jedyna różnica polega na tym, że:
+\begin{itemize}
+
+\item w przypadku typu \verb#double#, projektant języka wbudował go do kompilatora jako określony typ, gdzie jego znaczenie zostało określone w dokumentacji
+
+\item zaś w przypadku \verb#Sortable#, użytkownik określił co on oznacza w kodzie. Typ jest \verb#Sortable# jeśli posiada właściwości \verb#begin()# i \verb#end()# dostarczające losowy dostęp do sekwencji zawierającej elementy, które mogą być porównywane używając operatora \verb#<#
+
+\end{itemize}
+
+Teraz otrzymujemy bardziej jasny komunikat błędu. Jest on generowany natychmiast w momencie gdzie kompilator widzi błędne wywołanie (\verb#sortuj(d);#)\newline
+
+Cele konceptów to, zrobienie:
+\begin{itemize}
+
+\item kodu generycznego tak prostym jak niegeneryczny
+
+\item bardziej zaawansowanego kodu generycznego tak łatwym do użycia i nie tak trudnym do
+pisania
+
+\end{itemize}
+
+\end{document}

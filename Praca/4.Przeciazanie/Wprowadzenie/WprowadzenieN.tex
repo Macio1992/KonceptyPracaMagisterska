@@ -1,0 +1,79 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+
+\linespread{1.3}
+
+\begin{document}
+\lstset{language=C++}
+
+%\subsection*{Wprowadzenie}
+
+Koncepty są użyteczne nie tylko w poprawianiu wiadomości błędów i precyzyjnej specyfikacji interfejsów. Zwiększają również ekspresyjność. Używane są do skracania kodu, robieniu go generycznym i zwiększania wydajności. Wyjątkowo potężną cechą jest ich rola w przeciążaniu funkcji. 
+
+W kwietniu 2016 został wydany kompilator \emph{GCC 6.2}. Ta wersja zawierała główne unowocześnienie dwóch komponentów implementacji konceptów. Jeden z nich to generator diagnostyki, który został znacznie odnowiony, aby zapewnić dokładną diagnostykę niepowodzeń konceptu przy sprawdzaniu czy jest spełniony. Drugi to wsparcie dla przeciążania ograniczeń, które zostało całkowicie przepisane, aby zapewnić znaczne zwiększenie wydajności. W \emph{GCC} można teraz używać konceptów do projektów o znacznej wielkości i złożoności.
+
+Niektórzy twierdzą, że wyrażenia takie jak \verb#SFINAE#\footnote{(ang. Substitution failure is not an error) sytuacja w \emph{C++} gdzie nieprawidłowe zastąpienie parametrów szablonu nie jest samo w sobie błędem}, \verb#constexpr if#\footnote{Wyrażenie, którego wartość warunku musi być kontekstowo konwertowanym stałym wyrażeniem typu bool.}, \newline \verb#static_assert#\footnote{Wykonuje sprawdzanie porównania w czasie kompilacji} i mądre techniki metaprogramowania w zupełności wystarczą do przeciążania. To oczywiście poprawne myślenie, lecz jest to obniżanie poziomu abstrakcji, co skutkuje tym, że programuje się w sposób żeby było zrobione a nie jak powinno być. Wynikiem jest więcej pracy dla programisty, zwiększona ilość błędów i mniej szans optymalizacyjnych. \emph{C++} nie jest przeznaczony do metaprogramowania szablonów. Koncepty pomagają nam podnieść poziom programowania i ułatwić kod, bez dodawania kosztów czasu wykonania. \newline
+
+\begin{lstlisting}[frame=single]
+template<Sequence S, Equality_comparable T>
+  requires Same_as<T, value_type_t<S>>
+bool czyIstnieje(const S &seq, const T &value) {
+  for (const auto &x : range)
+    if (x == value)
+      return true;
+  return false;
+}
+\end{lstlisting}
+
+\noindent Funkcja \verb#czyIstnieje# przyjmuje sekwencję typu \verb#Sequence# jako pierwszy argument i wartość \verb#Equality comparable# jako drugi. Algorytm ma trzy ograniczenia:
+
+\begin{itemize}
+
+\item \verb#seq# musi być typu \verb#Sequence#
+\item \verb#value# musi być typu \verb#Equality_comparable#
+\item typ \verb#value# musi być taki sam jak element typu \verb#seq#
+
+\end{itemize}
+
+\noindent Wyrażenie \verb#value_type_t# to alias typu, który odnosi się do zdeklarowanego lub wydedukowanego typu wartości \verb#R#. Definicje konceptów \verb#Sequence# i \verb#Range# potrzebne do tego algorytmu wyglądają tak: \newline
+
+\begin{lstlisting}[frame=single]
+template<typename R>
+concept bool Range() {
+  return requires (R range) {
+    typename value_type_t<R>;
+    typename iterator_t<R>;
+    { begin(range) } -> iterator_t<R>;
+    { end(range) } -> iterator_t<R>;
+    requires Input_iterator<iterator_t<R>>();
+    requires Same_as<value_type_t<R>,
+      value_type_t<iterator_t<R>>>();
+  };
+}
+
+template<typename S>
+concept bool Sequence() {
+  return Range<R>() && requires (S seq) {
+    { seq.front() } -> const value_type<S>&;
+    { seq.back() } -> const value_type<S>&;
+  };
+}
+\end{lstlisting}
+
+Większość sekwencji posiada operacje \verb#front()# i \verb#back()#, które zwracają pierwszy i ostatni element przedziału. To nie jest w pełni rozwinięta specyfikacja sekwencji. Możemy użyć algorytmu do określenia, czy element znajduje się w dowolnej sekwencji. Niestety, algorytm nie działa w przypadku niektórych kolekcji:
+
+\begin{lstlisting}[frame=single]
+std::set<int> testSet { ... };
+if (czyIstnieje(testSet, 42)) // (1)
+  ...
+\end{lstlisting}
+
+(1) - błąd: brak operacji \verb#front()# lub \verb#back()#\newline
+
+Potrzebny jest sposób, żeby jasno określić, czy klucz znajduję się w zbiorze.
+
+%\addcontentsline{toc}{subsection}{Wprowadzenie}
+
+\end{document}

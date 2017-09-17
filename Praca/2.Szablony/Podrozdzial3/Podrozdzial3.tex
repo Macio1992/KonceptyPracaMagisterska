@@ -1,0 +1,54 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+
+\begin{document}
+\lstset{language=C++}
+
+\subsection{Wydajność}
+
+Szablony grają kluczową rolę w programowaniu w \emph{C++} dla wydajnych aplikacji. Ta wydajność ma trzy źródła:
+
+\begin{itemize}
+
+\item eliminacja wywołań funkcji na korzyść \emph{inliningu}\footnote{Optymalizacja kompilatora, która zamienia wywołanie funkcji na jej ciało w czasie kompilacji.}
+\item łączenie informacji z różnych kontekstów w celu lepszej optymalizacji
+\item unikanie generowania kodu dla niewykorzystanych funkcji
+
+\end{itemize}
+
+Pierwszy punkt nie odnosi się tylko do szablonów ale ogólnie do cech funkcji \emph{inline} w \emph{C++}. 
+Wydajność ta przekłada się zarówno na czas wykonania jak i pamięć. Szablony mogą równocześnie zmniejszyć obie wydajności. Zmniejszenie rozmiaru kodu jest szczególnie ważne, ponieważ w przypadku nowoczesnych procesorów zmniejszenie rozmiaru kodu pociąga za sobą zmniejszenie ruchu w pamięci i poprawienie wydajności pamięci podręcznej.
+
+%Jakkolwiek, \emph{inlining} jest istotny dla drobno-granularnej parametryzacji, którą powszechnie stosuje się w bibliotece \emph{STL} i innych bibliotekach  bazujących na generycznych technikach programowania. 
+
+\begin{lstlisting}[frame=single]
+template<typename FwdIter, typename T>
+T suma(FwdIter first, FwdIter last, T init){
+   for(FwdIter cur = first, cur != last, T init)
+      init = init + *cur;
+   return init;
+}
+
+\end{lstlisting}
+
+Funkcja \verb#suma# zwraca sumę elementów jej sekwencji wejściowej używając trzeciego argumentu ("akumulatora") jako wartości początkowej\newline
+
+\noindent \verb#vector<zespolona<double>> v;#  \newline
+\verb#zespolona<double> z = 0;# \newline
+\verb#z = suma(v.begin(), v.end(), z);# \newline
+
+By wykonać swoją pracę, \verb#suma# użyje operatorów dodawania i przypisania na elementach typu \verb#zespolona<double># i dereferencji iteratorów \verb#vector<zespolona<double>>#.  Dodanie wartości typu \verb#zespolona<double># pociąga za sobą dodanie wartości typu \verb#double#. By zrobić to wydajnie wszystkie te operacje muszą być \emph{inline}.  Zarówno \verb#vector# jak i \verb#zespolona# są typami zdefiniowanymi przez użytkownika. Oznacza to, że typy te jak i ich operacje są zdefiniowane gdzie indziej w kodzie źródłowym \emph{C++}. Obecne kompilatory \emph{C++} radzą sobie z tym przykładem, dzięki czemu jedyne wygenerowane wywołanie to wywołanie funkcji \verb#suma#. Dostęp do pól zmiennej \verb#vector# staje się prostą operacją maszyny ładującej, dodawanie wartości typu \verb#zespolona# staje się dwiema instrukcjami maszyny dodającej dwa elementy zmiennoprzecinkowe. Aby to osiągnąć, kompilator potrzebuje dostępu do pełnej definicji \verb#vector# i \verb#zespolona#. Jednak wynik jest ogromną poprawą (prawdopodobnie optymalną) w stosunku do naiwnego podejścia generowania wywołania funkcji dla każdego użycia operacji na parametrze szablonu. Oczywiście instrukcja dodawania wykonuje się znacznie szybciej niż wywołanie funkcji zawierającej dodawanie. Poza tym, nie ma żadnego wstępu wywołania funkcji, przekazywanie argumentów itd., więc kod wynikowy jest również wiele mniejszy. Dalsze zmniejszanie rozmiaru generowanego kodu uzyskuje się nie wysyłając kodu niewykorzystywanych funkcji. Klasa szablonu \verb#vector# ma wiele funkcji, które nie są wykorzystywane w tym przykładzie. Podobnie szablon klasy \verb#zespolona# ma wiele funkcji i funkcji nieskładowych (nienależących do funkcji klasy). Standard \emph{C++} gwarantuje, że nie jest emitowany żaden kod dla tych niewykorzystanych funkcji. 
+
+Inaczej sprawa wygląda, gdy argumenty są dostępne za pośrednictwem interfejsów zdefiniowanych jako wywołania funkcji pośrednich. Każda operacja staje się wtedy wywołaniem funkcji w pliku wykonywalnym generowanym dla kodu użytkownika, takiego jak \verb#suma#. Co więcej, byłoby wyraźnie nietypowe unikać odkładania kodu nieużywanych (wirtualnych) funkcji składowych. Jest to poza zdolnością obecnych kompilatorów \emph{C++} i prawdopodobnie pozostanie takie dla głównych programów \emph{C++}, gdzie oddzielna kompilacja i łączenie dynamiczne jest normą. Ten problem nie jest wyjątkowy dla \emph{C++}. Opiera się on na podstawowej trudności w ocenieniu, która część kodu źródłowego jest używana, a która nie, gdy jakakolwiek forma procesu \emph{run-time dispatch}\footnote{Zwany również \emph{dynamic dispatch} proces wybierania, implementacji polimorficznej operacji (metody lub funkcji) do wywołania w czasie uruchomienia.} ma miejsce. Szablony nie cierpią na ten problem bo ich specjalizacje są rozwiązywane w czasie kompilacji.\newline
+
+\noindent \verb#vector<int> v;#  \newline
+\verb#zespolona<double> s = 0;#  \newline
+\verb#s = suma(v.begin(), v.end(), s);#  \newline
+
+W powyższej funkcji dodawanie wykonywane jest przez konwertowanie wartości \verb#int# do wartości \verb#double# i potem dodawanie tego do akumulatora \verb#s#, używając operatora \verb#+# typu \verb#zespolona<double># i \verb#double#. To podstawowe dodawanie zmiennoprzecinkowe. Kwestia jest taka, że operator \verb#+# w funkcji \verb#suma# zależy od dwóch parametrów szablonu i leży to w kwestii kompilatora by wybrać bardziej odpowiedni operator \verb#+# bazując na informacji o tych dwóch argumentach. Byłoby możliwe utrzymanie lepszego rozdzielenia między różnymi kontekstami przez przekształcanie typu elementu w typ akumulatora. W takim przypadku spowodowałoby to powstanie dodatkowego \verb#zespolona<double># dla każdego elementu i dodania dwóch wartości typu \verb#zespolona#. Rozmiar kodu i czas wykonywania byłyby większe niż dwukrotnie.
+
+Duże ilości prawdziwego oprogramowania zależą od optymalizacji. W konsekwencji udoskonalone sprawdzanie typu, co zostało obiecane przy użyciu konceptów, nie może kosztować tych optymalizacji.
+
+\end{document}

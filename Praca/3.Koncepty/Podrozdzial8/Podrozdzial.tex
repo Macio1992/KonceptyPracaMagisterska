@@ -1,0 +1,171 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+
+\begin{document}
+\lstset{language=C++}
+
+\subsection{Przeciążanie funkcji przy użyciu konceptów}
+
+Głowna idea programowania generycznego polega na używaniu tej samej nazwy dla równoważnych operacji używających różnych typów. A zatem, w grę wchodzi przeciążanie. Jest bardzo często przeoczaną, źle rozumianą ale niezwykle potężną cechą konceptów. Koncepty pozwalają na wybieranie spośród funkcji opierając się na właściwościach danych argumentów. Są przydatne nie tylko do poprawiania komunikatów o błędach i dokładnej specyfikacji interfejsów. Zwiększają również ekspresywność. Mogą być użyte do skracania kodu, robienia go bardziej ogólnym i zwiększania wydajności.
+
+C++ jest językiem nie tylko assemblerowym wykorzystywanym do metaprogramowania szablonów. Koncepty pozwalają na podnoszenie poziomu programowania i upraszczają kod, bez angażowania dodatkowych zasobów czasu wykonania.
+
+Przykład algorytmu \emph{advance}\footnote{Algorytm \emph{advance(it, n);} inkrementuje otrzymany iterator \emph{it} o \emph{n} elementów.} ze standardowej biblioteki
+
+\begin{lstlisting}[frame=single]
+template<typename Iter> void advance(Iter p, int n);
+\end{lstlisting}
+
+Potrzeba różnych wersji tego algorytmu, m.in.
+\begin{itemize}
+\item prostej, dla iteratorów \emph{Forward}, przechodzących przez sekwencję element po elemencie
+\item szybkiej, dla iteratorów \emph{RandomAccess}, by wykorzystać umiejętność do zwiększania iteratora do arbitralnej pozycji w sekwencji używając jednej operacji.
+\end{itemize}
+
+Taka selekcja czasu kompilacji jest istotna dla wykonania kodu generycznego. Tradycyjnie, da się to zaimplementować używając funkcji pomocniczych lub techniki \emph{Tag Dispatching}\footnote{Technika programowania generycznego polegająca na wykorzystaniu przeciążania funkcji w celu wybrania, którą implementację funkcji wywołać w czasie wykonania}, lecz z konceptami rozwiązanie jest proste i oczywiste:
+
+\begin{lstlisting}[frame=single]
+template<Forward_iterator F, int n> 
+void advance(F f, int n){
+   while(n--) ++f;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[frame=single]
+template<Random_access_iterator R, int n> 
+void advance(R r, int n){
+   r += n;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[frame=single]
+void test(vector<string> &v, list<string> &l){
+   auto pv = find(v, "test"); //(1)
+   advance(pv, 2);
+   
+   auto pl = find(l, "test"); //(2)
+   advance(pl, 2);
+}
+\end{lstlisting}
+
+1) użycie szybkiego \verb#advance#
+2) użycie wolnego \verb#advance#\newline
+
+Skąd kompilator wie kiedy wywołać odpowiednią wersję \verb#advance#? Rozwiązanie przeciążania bazującego na konceptach jest zasadniczo proste:
+
+\begin{itemize}
+\item jeśli funkcja spełnia wymagania tylko jednego konceptu - wywołaj ją
+\item jeśli funkcja nie spełnia wymagań żadnego konceptu wywołanie - błąd
+\item sprawdź czy funkcja spełnia wymagania dwóch konceptów - zobacz czy wymagania jednego
+konceptu są podzbiorem wymagań drugiego
+\begin{itemize}
+\item jeśli tak - wywołaj funkcję z największą liczbą wymagań (najściślejszych wymagań)
+\item jeśli nie - błąd (dwuznaczność)
+\end{itemize}
+\end{itemize}
+
+W funkcji \verb#test#, \verb#Random_access_iterator# ma więcej wymagań niż \newline \verb#Forward_iterator#, więc wywołuje się szybka wersja \verb#advance# dla iteratora zmiennej \verb#vector#. Dla ietratora zmiennej \verb#list#, pasuje tylko iterator \emph{Forward}, więc używamy wolnej wersji \verb#advance#.
+
+\verb#Random_access_iterator# jest bardziej określony niż \verb#Forward_iterator# bo wymaga wszystkiego co 
+\verb#Forward_iterator# i dodatkowo operatorów takich jak \verb#[]# i \verb#+#.
+
+Ważne jest to że nie musimy wyraźnie określać ”hierarchii dziedziczenia” pośród konceptami czy definiować \emph{klas traits}\footnote{klasy traits}. Kompilator przetwarza hierarchię dla użytkownika. To jest prostsze, bardziej elastyczne i mniej podatne na błędy.
+
+Przeciążanie oparte na konceptach eliminuje znaczącą ilość \emph{boiler-plate}\footnote{BP} z programowania generycznego i kodu meta programowania (użycia \verb#enable_if# \footnote{EI}).
+
+Funkcja \verb#czyZnaleziono# ocenia czy element znaduje się w sekwencji
+
+\begin{lstlisting}[frame=single]
+template<Sequence S, Equality_comparable T>
+   requires Same_as<T, value_type_t<S>>
+bool czyZnaleziono(const S& seq, const T& value){
+   for(const S& seq, const T& value)
+      if(x == value)
+         return true;
+   return false;
+}
+\end{lstlisting}
+
+Funkcja przyjmuje jako parametr sekwencję i wartość typu \verb#Equality_comparable#. Algorytm ma 3 ograniczenia:
+
+\begin{itemize}
+
+\item typ parametru \verb#seq# musi być typu \verb#Sequence#
+\item typ parametru \verb#value# musi być typu \verb#Equality_comparable#
+\item typ wartości typu \verb#S# musi być taki sam jak typ elementu zmiennej \verb#seq#
+
+\end{itemize}
+
+Definicje konceptów \verb#Range# i \verb#Sequence# potrzebne do tego algorytmu
+
+\begin{lstlisting}[frame=single]
+template<typename R>
+concept bool Range() {
+   return requires (R range){
+      typename value_type_t<R>;
+      typename iterator_t<R>;
+      { begin(range) } -> iterator_t<R>;
+      { end(range) } -> iterator_t<R>;
+      requires Input_iterator<iterator_t<R>>();
+      requires Same_as<value_type_t<R>,
+         value_type_t<iterator_t<R>>>();
+   };
+};
+
+template<typename S>
+concept bool Sequence() {
+   return Range<R> && requires (S seq) {
+      { seq.front() } -> const value_type<S>&;
+      { seq.back() } -> const value_type<S>&;
+   };
+};
+
+\end{lstlisting}
+
+Specyfikacja wymaga by typ \verb#Range# miał:
+
+\begin{itemize}
+
+\item dwa powiązane typy nazwane \verb#value_type_t# i \verb#iterator_t#
+\item dwa poprawne operacje \verb#begin()# i \verb#end()#, które zwracają iteratory
+\item typ wartości typu \verb#R# jest taki sam jak typ wartości iteratora tego typu.
+
+\end{itemize}
+
+Wydaje się w porządku. Możemy użyć tego algorytmu, żeby sprawdzić czy element jest w sekwencji. Niestety to nie działa dla wszystkich kolekcji:\newline
+
+\noindent \verb#std::set<int> x { ... };#\newline
+\verb#if(czyZnaleziono(x, 42)){#\newline
+\verb#// błąd: brak operatora front() lub back()#\newline
+\verb#}#\newline
+
+Rozwiązaniem jest dodanie przeciążenia, które przyjmuje kontenery asocjacyjne
+
+\begin{lstlisting}[frame=single]
+template<Associative_container A, Same_as<key_type_t<T>> T>
+bool czyZnaleziono(const A& a, const T& value){
+   return a.find(value) != s.end();
+}
+\end{lstlisting}
+
+Ta wersja funkcji \verb#czyZnaleziono# ma tylko dwa ograniczenia: typ \verb#A# musi być \verb#Associative_container# i typ \verb#T# musi być taki sam jak typ klucza \verb#A# (\verb#key_type_t<A>#). Dla kontenerów asocjacyjnych, szukamy wartości używając funkcji \verb#find()# a potem sprawdzamy czy się udało przez porównanie z \verb#end()#. W przeciwieństwie do wersji \verb#Sequence#, typ \verb#T# nie musi być \verb#Equality_comparable#. To dlatego, że precyzyjne wymagania typu \verb#T# są ustalone przez kontener asocjacyjny (te wymagania są ustalane przez oddzielny komparator lub funkcję haszującą.
+
+Zdefiniowany koncept \verb#Associative_container#
+\begin{lstlisting}[frame=single]
+template<typename S>
+concept bool Associative_container() {
+   return Regular<S> && Range<S>() && requires {
+      typename key_type_t<S>;
+      requires Object_type<key_type_t<S>>;
+   } && requires (S s, key_type_t<S> k){
+      { s.empty() } -> bool;
+      { s.size() } -> int;
+      { s.find(k) } -> iterator_t<S>;
+      { s.count(k) } -> int;
+   };
+};
+\end{lstlisting}
+
+\end{document}

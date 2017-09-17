@@ -1,0 +1,87 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+
+\linespread{1.3}
+
+\begin{document}
+\lstset{language=C++}
+
+\subsection{Rozszerzanie algorytmów}
+
+Rozwiązaniem jest dodanie kolejnego przeciążenia, które jako parametr przyjmuje kontener asocjacyjny\footnote{(ang. associative container) grupa szablonów klas w standardowej bibliotece \emph{C++}, która implementuje uporządkowane tablice asocjacyjne. Kontenery zdefiniowane w obecnej wersji standardu: set, map, multiset, multimap, unordered set, unordered multiset, unordered map, unordered multimap.}.\newline
+\begin{lstlisting}[frame=single]
+template<Associative_container A,
+    Same_as<key_type_t<T>> T>
+bool czyIstnieje(const A &assoc, const T &value) {
+   return assoc.find(value) != assoc.end();
+}
+\end{lstlisting}
+
+Ta wersja funkcji \verb#czyIstnieje()# ma tylko dwa ograniczenia: \verb#A# musi być typu \verb#Associative_container#, a typ \verb#T# musi być taki sam jak typ klucza \verb#A# (\verb#key_type_t<A>#). W przypadku kontenerów asocjacyjnych po prostu wyszukujemy wartość przy użyciu \verb#find()#, a następnie sprawdzamy, czy znaleźliśmy ją przez porównanie z \verb#end()#. To prawdopodobnie szybsze rozwiązanie niż wyszukiwanie sekwencyjne. W przeciwieństwie do wersji \verb#Sequence#, \verb#T# nie musi być typu \verb#Equality_comparable#. Wynika to z faktu, że dokładne wymagania \verb#T# są określone przez kontener asocjacyjny, a wymogi te są zwykle określane przez osobny komparator lub funkcję haszującą. \newline
+
+\noindent Koncept \verb#Associative_container#:
+
+\begin{lstlisting}[frame=single]
+template<typename S>
+concept bool Associative_container() {
+  return Regular<S> && Range<S>() && 
+    requires {
+      typename key_type_t<S>;
+      requires Object_type<key_type_t<S>>;
+    } &&
+    requires (S s, key_type_t<S> k) {
+      { s.empty() } -> bool;
+      { s.size() } -> int;
+      { s.find(k) } -> iterator_t<S>;
+      { s.count(k) } -> int;
+    };
+}
+\end{lstlisting}
+
+\noindent Kontener asocjacyjny jest typu \verb#Regular#, definiuje \verb#Range# elementów, ma \verb#key_type# (który może różnić się od wartości \verb#value_type#), a także zestaw operacji, w tym \verb#find()#, itd.
+
+Podobnie jak poprzednio w przypadku \verb#Sequence#, nie jest to wyczerpująca lista wymagań dla kontenera asocjacyjnego. Nie dotyczy wstawiania i usuwania, a także wyklucza szczególne wymagania dotyczące iteratorów \verb#const#. Ponadto nie opisaliśmy dokładnie tego, jak oczekujemy, że zachowają się funkcje \verb#size()#, \verb#empty()#, \verb#find()# i \verb#count()#.
+
+Ten koncept dotyczy wszystkich kontenerów asocjacyjnych z biblioteki standardowej \emph{C++} (\verb#set#, \verb#map#, \verb#unordered_multiset#, itp.). Obejmuje również te niestandardowe, zakładając, że narażają interfejs. Na przykład przeciążenie to będzie działało dla wszystkich kontenerów asocjacyjnych typu \verb#Q#(\verb#QSet<T>#, \verb#QHash<T>#).
+
+Aby używać konceptów do rozwijania algorytmów, należy zrozumieć, jak kompilator wybiera pomiędzy wersją \verb#Sequence# a \verb#Associative_container#. Innymi słowy, co się dzieje gdy wywoływana jest funkcja \verb#czyIstnieje()#
+
+\begin{lstlisting}[frame=single]
+std::vector<int> v { ... };
+std::set<int> s { ... };
+
+if (czyIstnieje(v, 42)) // (1)
+   //...
+if (czyIstnieje(s, 42)) // (2)
+   //...
+\end{lstlisting}
+
+\noindent(1) - wywołuje przeciążenie \verb#Sequence#\newline
+(2) - wywołuje przeciążenie \verb#Associative_container#\newline
+
+\noindent Dla każdego wywołania \verb#czyIstnieje# kompilator określa, która funkcja jest wywoływana na podstawie podanych argumentów. Nazywa się to \emph{rozwiązaniem przeciążenia}\footnote{(ang. overload resolution)}. Jest to algorytm, który próbuje znaleźć jedną najlepszą funkcję (wśród jednego lub więcej kandydatów), aby ją wywołać na podstawie podanych argumentów. Oba wywołania funkcji odnoszą się do szablonów, więc kompilator wykonuje dedukcję argumentów szablonu, a potem formuje specjalizację deklaracji w oparciu o wyniki. W obydwu przypadkach dedukcja i zastąpienie powiodą się w zwykły i przewidywalny sposób, dlatego w każdym punkcie wywołania musimy wybrać jedną z dwóch specjalizacji. W tym miejscu ograniczenia wchodzą w grę. Tylko funkcje których ograniczenia są spełnione mogą być wybrane przez rozwiązanie przeciążenia. Aby określić, czy ograniczenia funkcji są spełnione, zastępujemy dedukowane argumenty szablonu powiązanymi ograniczeniami deklaracji szablonu funkcji, a następnie oceniamy wynikowe wyrażenie. Ograniczenia są spełnione, gdy substytucja się powiedzie, a wyrażenie okaże się prawdziwe.
+
+W pierwszym wywołaniu, dedukowane argumenty szablonu to \verb#vector<int># i \verb#int#. Argumenty te spełniają ograniczenia \verb#Sequence#, ale nie tych \newline \verb#Asociative_container#, ponieważ \verb#vector# nie ma \verb#find()# lub \verb#count()#. Dlatego kandydat \verb#Asociative_container# zostaje odrzucony, pozostawiając tylko kandydata \verb#Sequence#. W drugim wywołaniu, dedukowane argumenty to \verb#set<int># i \verb#int#. Rozwiązanie jest odwrotne do poprzedniego: \verb#set# nigdy nie jest \verb#Sequence#, ponieważ brakuje mu operacji \verb#front()# i \verb#back()#, tak więc kandydat jest odrzucany, a rozwiązanie przeciążenia wybiera kandydata \verb#Asociative_container#. To działa, ponieważ ograniczenia obu przeciążeń są wystarczająco wyczerpujące, aby zapewnić, że kontener spełnia ograniczenia jednego szablonu lub drugiego, ale nie obu. Sytuacja jest nieco bardziej interesująca, jeśli chcemy dodać więcej przeciążeń tego algorytmu. Możemy rozszerzyć algorytm dla konkretnych typów lub szablonów, tak jak mogliśmy to zrobić bez konceptów. Zasadniczo możemy określić prawidłowe definicje funkcji dla tych typów. Jeśli będziemy mieli szczęście, wiele z tych nowych przeładowań będzie miało identyczne definicje.
+
+Ogólnie rzecz biorąc, możemy kontynuować rozszerzanie definicji algorytmu generycznego przez dodanie przeciążeń, które różnią się tylko ich ograniczeniami. Są trzy przypadki, które trzeba wziąć pod uwagę podczas przeładowywania z konceptami:
+
+\begin{enumerate}
+\item Rozszerzać definicję poprzez dostarczenie przeciążenia, które działa dla zupełnie innego zestawu typów. Ograniczenia tych nowych przeładowań byłyby wzajemnie wykluczające lub miałyby minimalną ilość nakładania się na istniejące ograniczenia.
+
+\item Dostarczać zoptymalizowaną wersję istniejącego przeciążenia, specjalizując ją w podzbiorze swoich argumentów. Wymaga to utworzenia nowego przeciążenia, które ma silniejsze ograniczenia niż jego bardziej ogólna forma.
+
+\item Dostarczać uogólnioną wersję, która jest zdefiniowana w kategoriach ograniczeń współużytkowanych przez jedno lub więcej istniejących przeładowań.
+
+\end{enumerate}
+
+Jeśli ograniczenia nie są rozłączne z wieloma kandydatami, mogą być opłacalne. Kompilator musi określić najlepszego kandydata na wywołanie. Jeśli jednak kompilator nie może określić najlepszego kandydata, rozwiązanie jest niejednoznaczne. Gdy w pierwszym algorytmie \verb#czyIstnieje()# zmieni się wymaganie \verb#Sequence# zamiast tylko \verb#Range#. To zminimalizuje ilość nakładania się, a zatem i prawdopodobieństwo dwuznaczności.
+
+Ograniczenia rozłączne nie gwarantują, że połączenie będzie niedwuznaczne. Możemy na przykład spróbować zdefiniować kontener, który spełnia wymagania zarówno \verb#Sequence# i \verb#Associative_container#. W tym przypadku oba przeciążenia byłyby opłacalne, ale przeciążenie nie jest z natury lepsze od innych. Chyba że dodamy nowe przeciążenia, aby dostosować się do tego rodzaju struktury danych, wynik byłby niejednoznacznym rozwiązaniem.
+
+\verb#Sequence# i \verb#Associative_container# tak naprawdę mają pokrywające się ograniczenia. Oba wymagają konceptu \verb#Range#. Możemy rozważyć te przeciążenia jako przykład trzeciego przypadku. To wskazuje, że może istnieć algorytm, który można zdefiniować w odniesieniu do wymagań przecinających. Ale to nie jest takie proste.
+
+Drugi przypadek jest ważną cechą programowania generycznego w języku \emph{C++} i jest podstawą optymalizacji typów w bibliotekach generycznych. Ograniczenie subsumpcji pozwala na optymalizację generycznych algorytmów opartych na interfejsach dostarczonych przez ich argumenty.
+
+\end{document}
