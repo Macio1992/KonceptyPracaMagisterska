@@ -20,17 +20,17 @@ struct findByAOrB {
 
 template<Sequence S, Random_access_iterator R>
 void sortVertices(S &seq){
-    // sort(seq.begin(), seq.end());
+    sort(seq.begin(), seq.end());
 }
 
 template<Sequence S, Bidirectional_iterator R>
 void sortVertices(S &seq){
-    // seq.sort();
+    seq.sort();
 }
 
 template<Sequence S, Forward_iterator R>
 void sortVertices(S &seq){
-    // seq.sort();
+    seq.sort();
 }
 
 template<Associative_container A>
@@ -255,23 +255,15 @@ void removeEdgeWithOneNeighbour(S &edges, int &v){
 template<Associative_container A>
 void removeEdgeWithOneNeighbour(A &edges, int &v){
     
-    // cout<<"przekazane v:"<<v<<endl;
-    // typename A::iterator it = find_if(edges.begin(), edges.end(), findByAOrB(v));
     typename A::iterator it2;
     for(typename A::iterator it = edges.begin(); it != edges.end(); it++){
         if(it->getA() == v || it->getB() == v){
-            // cout<<it->toString();
-            // cout<<"HEHJHJJJJJ"<<endl;
             it2 = it;
             if(it->getA() == v) v = it->getB();
             else v = it->getA();
             it = prev(edges.end());
         }
     }
-
-    // cout<<"found: "<<it2->toString();
-    // if(it->getA() == v) v = it->getB();
-    // else v = it->getA();
 
     edges.erase(it2);
 }
