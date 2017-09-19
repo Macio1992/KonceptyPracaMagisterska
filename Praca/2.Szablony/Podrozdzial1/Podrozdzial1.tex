@@ -18,7 +18,7 @@ Parametry szablonu są określane na dwa sposoby:
 
 \end{enumerate}
 
-W \emph{C++} nazwa nie może być użyta bez wcześniejszej deklaracji. To wymaga od użytkownika ostrożnego traktowania definicji szablonów. Np. w definicji funkcji \verb#kwadrat# nie ma widocznej deklaracji symbolu *. Jednak, podczas inicjalizacji szablonu \verb#kwadrat<int># kompilator może sprowadzić symbol * do (wbudowanego) operatora mnożenia dla wartości \verb#int#. Dla wywołania \verb#kwadrat(zespolona(2.0))#, operator * zostałby rozwiązany do (zdefiniowanego przez użytkownika) operatora mnożenia dla wartości \verb#zespolona#. Symbol * jest więc \emph{nazwą zależną} w definicji funkcji \verb#kwadrat#. Oznacza to, że jest to ukryty parametr definicji szablonu. Możemy uczynić z operacji mnożenia formalny parametr:
+W \emph{C++} nazwa nie może być użyta bez wcześniejszej deklaracji. To wymaga od użytkownika ostrożnego traktowania definicji szablonów, np. w definicji funkcji \verb#kwadrat# nie ma widocznej deklaracji symbolu \verb#*#. Jednak, podczas inicjalizacji szablonu \verb#kwadrat<int># kompilator może sprowadzić symbol \verb#*# do (wbudowanego) operatora mnożenia dla wartości \verb#int#. Dla wywołania \verb#kwadrat(zespolona(2.0))#, operator * zostałby rozwiązany do (zdefiniowanego przez użytkownika) operatora mnożenia dla wartości \verb#zespolona#. Symbol \verb#*# jest więc \emph{nazwą zależną} w definicji funkcji \verb#kwadrat#. Oznacza to, że jest to ukryty parametr definicji szablonu. Możemy uczynić z operacji mnożenia formalny parametr:
 
 \begin{lstlisting}[frame=single]
 template<typename Multiply, typename T>

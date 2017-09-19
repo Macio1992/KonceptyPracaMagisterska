@@ -22,9 +22,61 @@
 	pdfpagemode=FullScreen
 }
 
+\renewcommand\refname{\vspace*{-4ex}}
+
+\makeatletter
+\renewcommand\@seccntformat[1]{\csname the#1\endcsname.\quad}
+\renewcommand\numberline[1]{#1.\hskip0.7em}
+\makeatother
+
+\newenvironment{university}[1]{
+	\begin{center}
+		\Large{\textsc{#1}}\\[1ex] 
+	\end{center}
+}
+
+\newenvironment{studentname}[2]{
+	\begin{center}	
+		\vspace{#1}\textbf{#2}
+	\end{center}
+}
+
+\newenvironment{workname}[2]{
+	\begin{center}	
+		\vspace{#1}\textbf{\Large{#2}}
+	\end{center}
+}
+
+\newenvironment{fac}[2]{
+	\begin{center}	
+		\emph{#1} #2 
+	\end{center}
+}
+
+\newenvironment{pro}[3]{
+	\begin{flushright}	
+		\vspace{#1}\hspace{#2} \Large{#3} 
+		\end{flushright}
+}
+
+\newenvironment{bottompar}{
+	\par\vspace*{\fill}}{\clearpage
+}
+
 \begin{document}
 	\pagenumbering{gobble}
-	\maketitle
+	%\maketitle
+
+	\begin{university}{Uniwersytet Gdański}\end{university}
+\begin{university}{Wydział Matematyki, Fizyki i Informatyki}\end{university}
+\begin{studentname}{80pt}{Maciej Zbierowski}\end{studentname}
+\begin{fac}{Kierunek: }{Informatyka}\end{fac}
+\begin{fac}{Numer albumu: }{206310}\end{fac}
+\begin{workname}{40pt}{Koncepty jako sposób ograniczania argumentów szablonu}\end{workname}
+\begin{bottompar}
+	\begin{center}\textbf{Gdańsk 2017} \end{center}
+\end{bottompar}	
+	
 	\newpage
 	\tableofcontents
 	\pagenumbering{arabic}

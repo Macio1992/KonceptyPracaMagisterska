@@ -7,7 +7,7 @@
 \lstset{language=C++}
 
 \section{Szablony - definicja, zastosowania}
-Szablony są jedną z głównych cech języka \emph{C++}. Dzięki nim możemy dostarczać generyczne typy i funkcje, bez kosztów czasu wykonania. Skupiają się na pisaniu kodu w sposób niezależny od konkretnego typu, dzięki czemu wspierają programowanie generyczne. \emph{C++} to bogaty język wspierający polimorficzne zachowania zarówno w czasie wykonania jak i kompilacji. W czasie wykonania używa on hierarchii klas i wywołań funkcji wirtualnych by wspierać praktyki zorientowane obiektowo, gdzie wywoływana funkcja zależy od typu obiektu docelowego podczas czasu wykonania. Natomiast w czasie kompilacji szablony wspierają programowanie generyczne, gdzie wywoływana funkcja zależy od statycznego typu czasu kompilacji argumentów szablonu.
+Szablony są jedną z głównych funkcjonalności języka \emph{C++}. Dzięki nim możemy dostarczać generyczne typy i funkcje, bez kosztów czasu wykonania. Skupiają się na pisaniu kodu w sposób niezależny od konkretnego typu, dzięki czemu wspierają programowanie generyczne. \emph{C++} to bogaty język wspierający polimorficzne zachowania zarówno w czasie wykonania jak i kompilacji. W czasie wykonania używa on hierarchii klas i wywołań funkcji wirtualnych by wspierać praktyki zorientowane obiektowo, gdzie wywoływana funkcja zależy od typu obiektu docelowego podczas czasu wykonania. Natomiast w czasie kompilacji szablony wspierają programowanie generyczne, gdzie wywoływana funkcja zależy od statycznego typu czasu kompilacji argumentów szablonu.
 
 Polimorfizm czasu kompilacji był w języku od bardzo dawna. Polega na dostarczeniu szablonu, który umożliwia kompilatorowi wygenerowanie kodu w czasie kompilacji.
 
@@ -22,7 +22,7 @@ T kwadrat (T x) {
 }
 \end{lstlisting}
 
-Kod ten deklaruje rodzinę funkcji indeksowanych po parametrze typu. Można odnieść się do konkretnego członka tej rodziny przez zastosowanie konstrukcji \verb#kwadrat<int>#. Mówimy wtedy, że żądana jest specjalizacja szablonu dla funkcji \verb#kwadrat# z listą argumentów szablonu \verb#<int>#. Proces tworzenia specjalizacji nosi nazwę inicjalizacji szablonu, potocznie zwany inicjalizacją. Kompilator C++ stworzy stosowny odpowiednik definicji funkcji:
+Kod ten deklaruje rodzinę funkcji indeksowanych po parametrze typu. Można odnieść się do konkretnego członka tej rodziny przez zastosowanie konstrukcji \verb#kwadrat<int>#. Mówimy wtedy, że żądana jest specjalizacja szablonu dla funkcji \verb#kwadrat# z listą argumentów szablonu \verb#<int>#. Proces tworzenia specjalizacji nosi nazwę \emph{inicjalizacji szablonu}, potocznie zwaną \emph{inicjalizacją}. Kompilator \emph{C++} stworzy stosowny odpowiednik definicji funkcji:
 \newpage
 
 \begin{lstlisting}[frame=single]
@@ -38,7 +38,7 @@ W przeciwieństwie do języków takich jak \emph{Ada} czy \emph{System F}, lista
 
 \verb#double d = kwadrat(2.0);# \newline
 
-Argument typu jest dedukowany na \verb#double#. Warto zauważyć, że odmiennie niż w językach takich jak \emph{Haskell} czy \emph{System F}, parametry szablonu w \emph{C++} nie są ograniczone względem typów.
+Argument typu jest dedukowany na \verb#double#. Warto zauważyć, że inaczej niż w językach takich jak \emph{Haskell} czy \emph{System F}, parametry szablonu w \emph{C++} nie są ograniczone względem typów.
 
 Szablonów używa się do zmniejszania kar abstrakcji i zjawiska \emph{code bloat}\footnote{Code bloat - produkowanie kodu, który postrzegany jest jako niepotrzebnie długi, spowalniający lub w inny sposób marnujący zasoby} w systemach wbudowanych w stopniu, który jest niepraktyczny w standardowych systemach obiektowych. Robi się to z dwóch powodów:
 
