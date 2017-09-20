@@ -23,7 +23,6 @@ T kwadrat (T x) {
 \end{lstlisting}
 
 Kod ten deklaruje rodzinę funkcji indeksowanych po parametrze typu. Można odnieść się do konkretnego członka tej rodziny przez zastosowanie konstrukcji \verb#kwadrat<int>#. Mówimy wtedy, że żądana jest specjalizacja szablonu dla funkcji \verb#kwadrat# z listą argumentów szablonu \verb#<int>#. Proces tworzenia specjalizacji nosi nazwę \emph{inicjalizacji szablonu}, potocznie zwaną \emph{inicjalizacją}. Kompilator \emph{C++} stworzy stosowny odpowiednik definicji funkcji:
-\newpage
 
 \begin{lstlisting}[frame=single]
 int kwadrat(int x) {
