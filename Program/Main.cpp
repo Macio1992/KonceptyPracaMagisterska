@@ -23,8 +23,7 @@ int main () {
     cout<<"Forward List:"<<endl;
     fill(edgesF, verticesF);
     print(edgesF);
-    if(checkIfEdgeExistsInGraph(edgesF, Edge(0,1))) cout <<"jest"<<endl;
-    else cout << "nie jest"<<endl;
+    determineEulerCycle(edgesF, verticesF);
 
     set<Edge> edgesS;
     set<int> verticesS;
@@ -32,8 +31,7 @@ int main () {
     cout<<"Set:"<<endl;
     fill(edgesS, verticesS);
     print(edgesS);
-    if(checkIfEdgeExistsInGraph(edgesS, Edge(0,1))) cout <<"jest"<<endl;
-    else cout << "nie jest"<<endl;
+    determineEulerCycle(edgesS, verticesS);
 
     list<Edge> edgesL;
     list<int> verticesL;
@@ -41,8 +39,7 @@ int main () {
     cout<<"List:"<<endl;
     fill(edgesL, verticesL);
     print(edgesL);
-    if(checkIfEdgeExistsInGraph(edgesL, Edge(0,1))) cout <<"jest"<<endl;
-    else cout << "nie jest"<<endl;
+    determineEulerCycle(edgesL, verticesL);
 
     multiset<Edge> edgesMulti;
     multiset<int> verticesMulti;
@@ -50,8 +47,7 @@ int main () {
     cout<<"Multiset:"<<endl;
     fill(edgesMulti, verticesMulti);
     print(edgesMulti);
-    if(checkIfEdgeExistsInGraph(edgesMulti, Edge(0,1))) cout <<"jest"<<endl;
-    else cout << "nie jest"<<endl;
+    determineEulerCycle(edgesMulti, verticesMulti);
 
     return 0;
 }

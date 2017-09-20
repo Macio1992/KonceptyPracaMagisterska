@@ -10,15 +10,6 @@
 
 using namespace std;
 
-struct findByAOrB {
-    findByAOrB(int) : value(value){}
-    bool operator()(Edge edge){
-        return (edge.getA() == value || edge.getB() == value);
-    }
-    private:
-        int value;
-};
-
 template<Sequence S, Random_access_iterator R>
 void sortVertices(S &seq){
     sort(seq.begin(), seq.end());
@@ -48,18 +39,13 @@ void addElementToContainer(S &seq, Element e){
     seq.insert(e);
 }
 
-template<typename S, typename Element>
+template<typename S>
 requires Sequence<S>() || SequenceForward<S>()
-typename S::iterator findElement(S &seq, Element e){
+typename S::iterator findElement(S &seq, int e){
     return find(seq.begin(), seq.end(), e);
 }
 
-template<Associative_container S, typename Element>
-typename S::iterator findElement(S &seq, Element e){
-    return seq.find(e);
-}
-
-template<typename S, typename V>
+template<typename S, typename V> requires Sequence<V>() || SequenceForward<V>()
 void readData(ifstream &file, S &seq, V &vertices){
 
     int a,b;
@@ -74,6 +60,27 @@ void readData(ifstream &file, S &seq, V &vertices){
         if(it == vertices.end()) addElementToContainer(vertices, a);
         
         it = findElement(vertices, b);
+        if(it == vertices.end()) addElementToContainer(vertices, b);
+
+    }
+
+}
+
+template<typename S, typename V> requires Associative_container<V>()
+void readData(ifstream &file, S &seq, V &vertices){
+
+    int a,b;
+
+    while(file >> a >> b){
+
+        Edge e(a,b);
+
+        addElementToContainer(seq, e);
+
+        typename V::iterator it = vertices.find(a);
+        if(it == vertices.end()) addElementToContainer(vertices, a);
+        
+        it = vertices.find(b);
         if(it == vertices.end()) addElementToContainer(vertices, b);
 
     }
@@ -181,7 +188,12 @@ int getNeighboursCount(E &edges, int v){
     return l;
 }
 
-template<typename S> requires Sequence<S>() || Associative_container<S>()
+template<Sequence S>
+void deleteElementFromContainer(S &seq, typename S::iterator it){
+    seq.erase(it);
+}
+
+template<Associative_container S>
 void deleteElementFromContainer(S &seq, typename S::iterator it){
     seq.erase(it);
 }
@@ -225,17 +237,17 @@ int getZeroDegreeCount(E &edges, V &vertices){
     return zeroDegreeVertex;
 }
 
-template<typename S>
+template<typename S> requires Sequence<S>() || SequenceForward<S>()
 void removeEdgeWithOneNeighbour(S &edges, int &v){
     
-    typename S::iterator it = findElement(edges, v);
+    typename S::iterator it = findElement<S>(edges, v);
     
     if(it->getA() == v) v = it->getB();
     else v = it->getA();
 
     deleteElementFromContainer(edges, it);
 }
-/*
+
 template<Associative_container A>
 void removeEdgeWithOneNeighbour(A &edges, int &v){
     
@@ -252,18 +264,7 @@ void removeEdgeWithOneNeighbour(A &edges, int &v){
     edges.erase(it2);
 }
 
-template<SequenceForward S>
-void removeEdgeWithOneNeighbour(S &edges, int &v){
-    
-    typename S::iterator it = find(edges.begin(), edges.end(), v);
-    
-    if(it->getA() == v) v = it->getB();
-    else v = it->getA();
-
-    edges.remove(*it);
-}
-*/
-template<typename E, typename V> requires Sequence<E>()
+template<typename E, typename V>
 void removeEdgeWithMoreNeighbour(E &edges, int &v, V &vertices){
     
     bool w = true;
@@ -271,51 +272,15 @@ void removeEdgeWithMoreNeighbour(E &edges, int &v, V &vertices){
     for(typename E::iterator i = edges.begin(); i != edges.end() && w; i++){
         if(i->getA() == v && checkIfStillConnected(edges, *i, getZeroDegreeCount(edges, vertices), v, vertices)){
             v = i->getB();
-            // edges.erase(i);
             deleteElementFromContainer(edges, i);
-            // i = prev(edges.end());
             w = false;
         } else if(i->getB() == v && checkIfStillConnected(edges, *i, getZeroDegreeCount(edges, vertices), v, vertices)){
             v = i->getA();
             deleteElementFromContainer(edges, i);
-            // i = prev(edges.end());
             w = false;
         }
     }
 }
-/*
-template<typename E, typename V> requires Associative_container<E>()
-void removeEdgeWithMoreNeighbour(E &edges, int &v, V &vertices){
-    for(typename E::iterator i = edges.begin(); i != edges.end(); i++){
-        if(i->getA() == v && checkIfStillConnected(edges, *i, getZeroDegreeCount(edges, vertices), v, vertices)){
-            v = i->getB();
-            edges.erase(i);
-            i = prev(edges.end());
-        } else if(i->getB() == v && checkIfStillConnected(edges, *i, getZeroDegreeCount(edges, vertices), v, vertices)){
-            v = i->getA();
-            edges.erase(i);
-            i = prev(edges.end());
-        }
-    }
-}
-
-template<SequenceForward E, typename V>
-void removeEdgeWithMoreNeighbour(E &edges, int &v, V &vertices){
-    bool w = true;
-    for(typename E::iterator i = edges.begin(); i != edges.end() && w; i++){
-        if(i->getA() == v && checkIfStillConnected(edges, *i, getZeroDegreeCount(edges, vertices), v, vertices)){
-            v = i->getB();
-            edges.remove(*i);
-            w = false;
-            // i = prev(edges.end());
-        } else if(i->getB() == v && checkIfStillConnected(edges, *i, getZeroDegreeCount(edges, vertices), v, vertices)){
-            v = i->getA();
-            edges.remove(*i);
-            w = false;
-            // i = prev(edges.end());
-        }
-    }
-}*/
 
 template<typename E, typename V>
 void determineEulerCycle(E &edges, V &vertices){
