@@ -6,6 +6,7 @@
 #include <fstream>
 #include <stack>
 #include <set>
+#include <map>
 
 using namespace std;
 
@@ -23,67 +24,66 @@ void sortVertices(S &seq){
     sort(seq.begin(), seq.end());
 }
 
-template<Sequence S, Bidirectional_iterator R>
+template<typename S, typename R>
+requires (Sequence<S>() && Bidirectional_iterator<R>()) || (SequenceForward<S>() && Forward_iterator<R>())
 void sortVertices(S &seq){
     seq.sort();
 }
 
-template<Sequence S, Forward_iterator R>
-void sortVertices(S &seq){
-    seq.sort();
-}
-
-template<Associative_container A>
+template<Associative_container A, typename I>
 void sortVertices(A &seq){}
 
-template<Sequence S, Sequence V>
+template<Sequence S, typename Element>
+void addElementToContainer(S &seq, Element e){
+    seq.push_back(e);
+}
+
+template<SequenceForward S, typename Element>
+void addElementToContainer(S &seq, Element e){
+    seq.push_front(e);
+}
+
+template<Associative_container S, typename Element>
+void addElementToContainer(S &seq, Element e){
+    seq.insert(e);
+}
+
+template<typename S, typename Element>
+requires Sequence<S>() || SequenceForward<S>()
+typename S::iterator findElement(S &seq, Element e){
+    return find(seq.begin(), seq.end(), e);
+}
+
+template<Associative_container S, typename Element>
+typename S::iterator findElement(S &seq, Element e){
+    return seq.find(e);
+}
+
+template<typename S, typename V>
 void readData(ifstream &file, S &seq, V &vertices){
 
-    cout<<"Sequence"<<endl;
     int a,b;
 
     while(file >> a >> b){
 
         Edge e(a,b);
 
-        seq.push_back(e);
+        addElementToContainer(seq, e);
 
-        typename V::iterator it = find(vertices.begin(), vertices.end(), a);
-        if(it == vertices.end()) vertices.push_back(a);
+        typename V::iterator it = findElement(vertices, a);
+        if(it == vertices.end()) addElementToContainer(vertices, a);
         
-        it = find(vertices.begin(), vertices.end(), b);
-        if(it == vertices.end()) vertices.push_back(b);
+        it = findElement(vertices, b);
+        if(it == vertices.end()) addElementToContainer(vertices, b);
 
     }
 
 }
 
-template<Associative_container S, Associative_container V>
-void readData(ifstream &file, S &seq, V &vertices){
-
-    cout<<"ASS"<<endl;
-    int a,b;
-
-    while(file >> a >> b){
-
-        Edge e(a,b);
-
-        seq.insert(e);
-
-        typename V::iterator it = vertices.find(a);
-        if(it == vertices.end()) vertices.insert(a);
-        
-        it = vertices.find(b);
-        if(it == vertices.end()) vertices.insert(b);
-        
-    }
-
-}
-
-template<Sequence E, Sequence V>
+template<typename E, typename V>
 void fill(E &edges, V &vertices){
 
-    ifstream file("../data/file3.txt");
+    ifstream file("data/file3.txt");
     
     if(!file){
         cout <<"Error input file";
@@ -96,35 +96,25 @@ void fill(E &edges, V &vertices){
 
 }
 
-template<Associative_container E, Associative_container V>
-void fill(E &edges, V &vertices){
-
-    ifstream file("../data/file3.txt");
-    
-    if(!file){
-        cout <<"Error input file";
-        exit(0);
-    }
-
-    readData(file, edges, vertices);
-    sortVertices<V>(vertices);
-    file.close();
-
-}
-
 template<typename E>
 void print(E &edges){
-    cout<<endl<<"Graph: "<<endl<<endl;
+    cout<<endl;
     for(typename E::iterator it = edges.begin(); it != edges.end(); it++)
         cout << it->toString();
     cout<<endl;
 }
 
+template<typename S>
+int getVerticesSize(typename S::iterator begin, typename S::iterator end){
+    return distance(begin, end);
+}
+
 template<typename E, typename V>
 bool checkIfGraphConnected(E &ed, V &vertices, int x, int startVertice) {
-    
-    bool *visited = new bool[vertices.size()];
-    for (int i = 0; i < vertices.size(); i++) visited[i] = false;
+
+    int verticesSize = getVerticesSize<V>(vertices.begin(), vertices.end());
+    bool *visited = new bool[verticesSize];
+    for (int i = 0; i < verticesSize; i++) visited[i] = false;
 
     stack<int>stack;
     int vc = 0;
@@ -151,18 +141,18 @@ bool checkIfGraphConnected(E &ed, V &vertices, int x, int startVertice) {
 
     delete [] visited;
 
-    return (vc == vertices.size()-x);
+    return (vc == verticesSize-x);
 
 }
 
-template<Sequence S>
+template<typename S> requires Sequence<S>() || SequenceForward<S>()
 bool checkIfEdgeExistsInGraph(S &edges, Edge e){
     return (find(edges.begin(), edges.end(), Edge(e.getA(), e.getB())) != edges.end());
 }
 
 template<Associative_container A>
 bool checkIfEdgeExistsInGraph(A &edges, Edge e){
-    return (find_if(edges.begin(), edges.end(), Edge(e.getA(), e.getB())) != edges.end());
+    return edges.find(Edge(e.getA(), e.getB())) != edges.end();
 }
 
 template<typename E>
@@ -179,7 +169,7 @@ bool checkIfAllEdgesEvenDegree(E &edges, V &vertices){
         }
         if(counter % 2 == 0) i++;
     }
-    return (i == vertices.size()) ? true : false;
+    return (i == getVerticesSize<V>(vertices.begin(), vertices.end()));
 }
 
 template<typename E>
@@ -191,35 +181,29 @@ int getNeighboursCount(E &edges, int v){
     return l;
 }
 
-template<Sequence E, typename V>
-bool checkIfStillConnected(E &edges, Edge e, int x, int startVertice, V &vertices){
-    
-    E tmp;
-
-    for(auto e : edges)
-        tmp.push_back(e);
-
-    for(typename E::iterator it = tmp.begin(); it != tmp.end(); it++)
-		if (it->getA() == e.getA() && it->getB() == e.getB()) {
-			tmp.erase(it);
-			it = prev(tmp.end());
-        }
-        
-    return checkIfGraphConnected(tmp, vertices, x, startVertice);
+template<typename S> requires Sequence<S>() || Associative_container<S>()
+void deleteElementFromContainer(S &seq, typename S::iterator it){
+    seq.erase(it);
 }
 
-template<Associative_container E, typename V>
+template<SequenceForward S>
+void deleteElementFromContainer(S &seq, typename S::iterator it){
+    seq.remove(*it);
+}
+
+template<typename E, typename V>
 bool checkIfStillConnected(E &edges, Edge e, int x, int startVertice, V &vertices){
     
     E tmp;
 
     for(auto e : edges)
-        tmp.insert(e);
+        addElementToContainer(tmp, e);
 
-    for(typename E::iterator it = tmp.begin(); it != tmp.end(); it++)
+    bool w = true;
+    for(typename E::iterator it = tmp.begin(); it != tmp.end() && w; it++)
 		if (it->getA() == e.getA() && it->getB() == e.getB()) {
-			tmp.erase(it);
-			it = prev(tmp.end());
+            deleteElementFromContainer(tmp, it);
+            w = false;
         }
         
     return checkIfGraphConnected(tmp, vertices, x, startVertice);
@@ -241,17 +225,17 @@ int getZeroDegreeCount(E &edges, V &vertices){
     return zeroDegreeVertex;
 }
 
-template<Sequence S>
+template<typename S>
 void removeEdgeWithOneNeighbour(S &edges, int &v){
     
-    typename S::iterator it = find(edges.begin(), edges.end(), v);
+    typename S::iterator it = findElement(edges, v);
     
     if(it->getA() == v) v = it->getB();
     else v = it->getA();
 
-    edges.erase(it);
+    deleteElementFromContainer(edges, it);
 }
-
+/*
 template<Associative_container A>
 void removeEdgeWithOneNeighbour(A &edges, int &v){
     
@@ -268,7 +252,39 @@ void removeEdgeWithOneNeighbour(A &edges, int &v){
     edges.erase(it2);
 }
 
-template<typename E, typename V>
+template<SequenceForward S>
+void removeEdgeWithOneNeighbour(S &edges, int &v){
+    
+    typename S::iterator it = find(edges.begin(), edges.end(), v);
+    
+    if(it->getA() == v) v = it->getB();
+    else v = it->getA();
+
+    edges.remove(*it);
+}
+*/
+template<typename E, typename V> requires Sequence<E>()
+void removeEdgeWithMoreNeighbour(E &edges, int &v, V &vertices){
+    
+    bool w = true;
+    
+    for(typename E::iterator i = edges.begin(); i != edges.end() && w; i++){
+        if(i->getA() == v && checkIfStillConnected(edges, *i, getZeroDegreeCount(edges, vertices), v, vertices)){
+            v = i->getB();
+            // edges.erase(i);
+            deleteElementFromContainer(edges, i);
+            // i = prev(edges.end());
+            w = false;
+        } else if(i->getB() == v && checkIfStillConnected(edges, *i, getZeroDegreeCount(edges, vertices), v, vertices)){
+            v = i->getA();
+            deleteElementFromContainer(edges, i);
+            // i = prev(edges.end());
+            w = false;
+        }
+    }
+}
+/*
+template<typename E, typename V> requires Associative_container<E>()
 void removeEdgeWithMoreNeighbour(E &edges, int &v, V &vertices){
     for(typename E::iterator i = edges.begin(); i != edges.end(); i++){
         if(i->getA() == v && checkIfStillConnected(edges, *i, getZeroDegreeCount(edges, vertices), v, vertices)){
@@ -282,6 +298,24 @@ void removeEdgeWithMoreNeighbour(E &edges, int &v, V &vertices){
         }
     }
 }
+
+template<SequenceForward E, typename V>
+void removeEdgeWithMoreNeighbour(E &edges, int &v, V &vertices){
+    bool w = true;
+    for(typename E::iterator i = edges.begin(); i != edges.end() && w; i++){
+        if(i->getA() == v && checkIfStillConnected(edges, *i, getZeroDegreeCount(edges, vertices), v, vertices)){
+            v = i->getB();
+            edges.remove(*i);
+            w = false;
+            // i = prev(edges.end());
+        } else if(i->getB() == v && checkIfStillConnected(edges, *i, getZeroDegreeCount(edges, vertices), v, vertices)){
+            v = i->getA();
+            edges.remove(*i);
+            w = false;
+            // i = prev(edges.end());
+        }
+    }
+}*/
 
 template<typename E, typename V>
 void determineEulerCycle(E &edges, V &vertices){

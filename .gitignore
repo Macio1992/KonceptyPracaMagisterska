@@ -139,3 +139,5 @@
 /Program/*.out
 /Program/*.exe
 /Program/*.hpp.gch
+
+/Program/test/

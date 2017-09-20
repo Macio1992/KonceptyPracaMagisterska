@@ -110,6 +110,13 @@ concept bool Sequence() {
     };
 }
 
+template<typename S>
+concept bool SequenceForward() {
+    return requires(S seq){
+        { seq.front() } -> const typename S::value_type&;
+    };
+}
+
 template<typename T, typename U>
 concept bool Same_as() {
     return std::is_same<T,U>::value;
