@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><danepracy><studiauczelnia>Uniwersytet Gdański</studiauczelnia><studiawydzial>Wydział Matematyki, Fizyki i Informatyki</studiawydzial><studiakierunek>Informatyka</studiakierunek><studiatryb>stacjonarne</studiatryb><studentimie>Maciej</studentimie><studentnazwisko>Zbierowski</studentnazwisko><studentalbum>206310</studentalbum><pracaopiekun>prof. UG, dr hab. Christoph Schwarzweller</pracaopiekun><pracaprowadzacy>prof. UG, dr hab. Christoph Schwarzweller</pracaprowadzacy><pracatytul>Koncepty jako sposób ograniczania argumentów szablonu</pracatytul><pracadziedzina>11.3|Informatyka</pracadziedzina><pracarok>2017</pracarok><pracadatazlozenia>20-09-2017</pracadatazlozenia><pracastreszczenie>Dopiero z początkiem dwudziestego pierwszego wieku zaczęły się poważne prace udoskonalające język C++. Te prace ostatecznie dały rezultat w postaci konceptów. Rozwój tych funkcjonalności i ich wdrożenie do biblioteki standardowej C++ były głównymi tematami Komisji Standardu C++. Andrew Sutton i Bjarne Stroustrup opublikowali dokument omawiający jak zminimalizować ilość konceptów potrzebnych do określania części biblioteki standardowej, a grupa z Uniwersytetu w Indianie zainicjowała prace nad nową implementacją. Koncepty są jedną z najbardziej przeanalizowanych, zaproponowanych funkcjonalności C++. Powstały by wspierać programowanie generyczne. Proponowano różne ich projekty. W 1987 próbowano projektować szablony z odpowiednimi interfejsami. Chciano by szablony były w pełni ogólne i wyraziste, • by nie wykorzystywały większych zasobów w porównaniu do kodowania ręcznego. Brak dobrze określonych interfejsów prowadzi do szczególnie złych wiadomości&#xD;
+błędów. Dwie pozostałe właściwości uczyniły z szablonów sukces. Rozwiązanie problemu specyfikacji interfejsu zostało, przez Alexa Stepanova&#xD;
+nazwane konceptami. Koncept to zbiór wymagań argumentów szablonu. Można też go nazwać systemem typów dla szablonów, który obiecuje znacząco ulepszyć diagnostyki błędów i zwiększyć siłę ekspresji, taką&#xD;
+jak przeciążanie konceptowe oraz częściową specjalizację szablonu funkcji. Koncepty zostały opublikowane i zaimplementowane w wersji 6.1 kompilatora GCC w kwietniu 2016 roku. Fundamentalnie to predykaty czasu kompilacji typów i wartości. Mogą być łączone zwykłymi operatorami logicznymi (&amp;&amp;, ||, !).</pracastreszczenie><pracaslowakluczowe>koncepty, szablony, przeciążanie funkcji, wydajność, poprawa diagnostyki błędów, programowanie generyczne, algorytm Fleuryego, kompilator GG, wdrożenie</pracaslowakluczowe><pracaspistresci>Wstęp&#xD;
+1. Szablony - definicja, zastosowania&#xD;
+1.1. Parametryzacja szablonów&#xD;
+1.2. Inicjalizacje i sprawdzanie&#xD;
+1.3. Wydajność&#xD;
+2. Koncepty&#xD;
+2.1. Ulepszenie programowania generycznego&#xD;
+2.2. System konceptów&#xD;
+2.3. Definicja konceptu&#xD;
+2.4. Określanie interfejsu szablonu&#xD;
+2.5. Notacja skrótowa&#xD;
+2.6. Definiowanie konceptów&#xD;
+3. Przeciążanie&#xD;
+3.1. Rozszerzanie algorytmów&#xD;
+3.2. Specjalizacja algorytmów&#xD;
+3.3. Semantyczne udoskonalanie&#xD;
+4. Implementacja algorytmu Fleury’ego jako przykład wykorzystujący koncepty&#xD;
+4.1. Omówienie problemu&#xD;
+4.2. Działanie programu&#xD;
+5. Włączenie konceptów do standardu C++&#xD;
+6. Bibliografia</pracaspistresci></danepracy>
