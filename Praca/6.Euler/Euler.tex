@@ -78,16 +78,19 @@ void sortVertices(S &seq){
 }
 \end{lstlisting}
 
-\item sekwencyjnych z iteratorem \verb#Bidirectional# (\verb#list#) wywoływana jest funkcja szablonu ograniczonego przez koncepty: \verb#Sequence# i \newline \verb#Bidirectional_iterator#.
+\item sekwencyjnych z iteratorem \verb#Bidirectional# (\verb#list#) lub sekwencyjnych \emph{forward}(\verb#forward_list#) z iteratorem \verb#Forward# wywoływana jest funkcja szablonu ograniczonego przez koncepty: \verb#Sequence# i \verb#Bidirectiona-# \newline \verb#l_iterator# lub \verb#SequenceForward# i \verb#Forward_iterator#
 
 \begin{lstlisting}[frame=single]
-template<Sequence S, Bidirectional_iterator R>
+template<typename S, typename R>
+requires (Sequence<S>() && 
+Bidirectional_iterator<R>()) || 
+(SequenceForward<S>() && Forward_iterator<R>())
 void sortVertices(S &seq){
     seq.sort();
 }
 \end{lstlisting}
 
-\item asocjacyjnych (\verb#set#) wywoływana jest funkcja szablonu ograniczonego przez koncept: \verb#Associative_container #.
+\item asocjacyjnych (\verb#set#) wywoływana jest funkcja szablonu ograniczonego przez koncept: \verb#Associative_container#.
 
 \begin{lstlisting}[frame=single]
 template<Associative_container A>
@@ -96,7 +99,7 @@ void sortVertices(A &seq){}
 
 \end{itemize}
 \newpage
-Omawiany algorytm wykonuje funkcja \verb#determineEulerCycle#:
+\noindent Omawiany algorytm wykonuje funkcja \verb#determineEulerCycle#:
 \begin{lstlisting}[frame=single]
 template<typename E, typename V>
 void determineEulerCycle(E &edges, V &vertices){
@@ -134,7 +137,7 @@ void determineEulerCycle(E &edges, V &vertices){
 }
 \end{lstlisting}
 
-Żeby algorytm się wykonał, muszą zostać spełnione dwa warunki: graf musi być spójny(za to odpowiedzialna jest funkcja \verb#checkIfGraphConnected#) i wszystkie krawędzie muszą być parzystego stopnia (\verb#checkIfAllEdgesEvenDegree#).
+Żeby algorytm się wykonał, muszą zostać spełnione dwa warunki: graf musi być spójny (za to odpowiedzialna jest funkcja \verb#checkIfGraphConnected#) i wszystkie krawędzie muszą być parzystego stopnia (\verb#checkIfAllEdgesEvenDegree#).
 
 \verb#checkIfGraphConnected()#
 \begin{lstlisting}[frame=single]
@@ -177,7 +180,7 @@ int x, int startVertice) {
 }
 \end{lstlisting}
 
-Algorytm przechodzi przez graf, po kolei wrzucając odwiedzane wierzchołki na stos, zaznaczając je w tablicy odwiedzonych (\verb#visited#) i zaraz zdejmuje z tego stosu, zwiększając licznik \verb#vc#. Robi to dopóki stos nie jest pusty. Zwraca warunek porównujący licznik \verb#vc# z rozmiarem kontenera wierzchołków (wszystkie wierzchołki zostały odwiedzone, czyli istnieją ścieżki między wierzchołkami, graf jest spójny).
+Algorytm przechodzi przez graf, po kolei wrzuca odwiedzane wierzchołki na stos, zaznacza je w tablicy odwiedzonych (\verb#visited#) i zaraz zdejmuje z tego stosu, zwiększając licznik \verb#vc#. Robi to dopóki stos nie jest pusty. Zwraca warunek porównujący licznik \verb#vc# z rozmiarem kontenera wierzchołków (wszystkie wierzchołki zostały odwiedzone, czyli istnieją ścieżki między wierzchołkami, graf jest spójny).
 
 \verb#checkIfAllEdgesEvenDegree#:
 \begin{lstlisting}[frame=single]
@@ -195,23 +198,24 @@ bool checkIfAllEdgesEvenDegree(E &edges, V &vertices){
 }
 \end{lstlisting}
 
-Zmienna \verb#i#  zwiększa się jeśli ilość wystąpień wierzchołka jest liczbą parzystą. Zwraca wartość \verb#true# jeśli zmienna \verb#i# jest równa liczbie elementów kontenera zawierającego wierzchołki(dla każdego wierzchołka zmienna \verb#i# zwiększała się o 1).
+Zmienna \verb#i#  zwiększa się jeśli ilość wystąpień wierzchołka jest liczbą parzystą. Zwraca wartość \verb#true# jeśli zmienna \verb#i# jest równa liczbie elementów kontenera zawierającego wierzchołki (dla każdego wierzchołka zmienna \verb#i# zwiększała się o 1).
 
 Jeśli warunek nie zostanie spełniony, użytkownik zostaje poinformowany o tym, że graf jest niepoprawny. W odwrotnej sytuacji, w pętli (dopóki kontener krawędzi nie jest pusty), wykonywana jest jedna dwóch operacji. Gdy wierzchołek ma jednego sąsiada, wywołuje się funkcja \verb#removeEdgeWithOneN-#\newline \verb#eighbour()#, a gdy więcej wierzchołków, funkcja \verb#removeEdgeWithMoreNei-# \newline \verb#ghbour()#. Pierwsza z nich ma dwa przeciążenia konceptowe:
 \begin{itemize}
 
-\item Dla kontenera sekwencyjnego:
+\item Dla kontenera sekwencyjnego lub kontenera sekwencyjnego \emph{forward}
 \begin{lstlisting}[frame=single]
-template<Sequence S>
+template<typename S> requires Sequence<S>()
+|| SequenceForward<S>()
 void removeEdgeWithOneNeighbour(S &edges, int &v){
     
-    typename S::iterator it = find(edges.begin(), 
-    edges.end(), v);
+    typename S::iterator it = 
+    findElement<S>(edges, v);
     
     if(it->getA() == v) v = it->getB();
     else v = it->getA();
 
-    edges.erase(it);
+    deleteElementFromContainer(edges, it);
 }
 \end{lstlisting}
 
@@ -242,24 +246,26 @@ Funkcja znajduje krawędź, dostając wierzchołek wychodzący. I wierzchołek z
 Druga \verb#removeEdgeWithMoreNeighbour()# wygląda:
 \begin{lstlisting}[frame=single]
 template<typename E, typename V>
-void removeEdgeWithMoreNeighbour(E &edges, int &v,
+void removeEdgeWithMoreNeighbour(E &edges, int &v, 
 V &vertices){
+    
+    bool w = true;
+    
     for(typename E::iterator i = edges.begin(); 
-    i != edges.end(); i++){
-        if(i->getA() == v && 
-        checkIfStillConnected(edges, *i, 
-        getZeroDegreeCount(edges, vertices), v, 
-        vertices)){
+    i != edges.end() && w; i++){
+        if(i->getA() == v && checkIfStillConnected
+        (edges, *i, getZeroDegreeCount(edges, 
+        vertices), v, vertices)){
             v = i->getB();
-            edges.erase(i);
-            i = prev(edges.end());
+            deleteElementFromContainer(edges, i);
+            w = false;
         } else if(i->getB() == v && 
-        checkIfStillConnected(edges, *i, 
-        getZeroDegreeCount(edges, vertices), v, 
+        checkIfStillConnected(edges, 
+        *i, getZeroDegreeCount(edges, vertices), v, 
         vertices)){
             v = i->getA();
-            edges.erase(i);
-            i = prev(edges.end());
+            deleteElementFromContainer(edges, i);
+            w = false;
         }
     }
 }
@@ -267,28 +273,116 @@ V &vertices){
 \newpage
 Jeśli wierzchołek ma więcej sąsiadów, wybiera tego który nie rozspójni grafu. Żeby to sprawdzić używa funkcji \verb#checkIfStillConnected#:
 \begin{lstlisting}[frame=single]
-template<Associative_container E, typename V>
+template<typename E, typename V>
 bool checkIfStillConnected(E &edges, Edge e, int x, 
 int startVertice, V &vertices){
     
-   E tmp;
+    E tmp;
 
-   for(auto e : edges)
-      tmp.insert(e);
+    for(auto e : edges)
+        addElementToContainer(tmp, e);
 
-   for(typename E::iterator it = tmp.begin(); 
-   it != tmp.end(); it++)
-      if (it->getA() == e.getA() && 
-         it->getB() == e.getB()) {
-         tmp.erase(it);
-         it = prev(tmp.end());
-      }
+    bool w = true;
+    for(typename E::iterator it = tmp.begin(); 
+    it != tmp.end() && w; it++)
+		if (it->getA() == e.getA() && 
+		it->getB() == e.getB()) {
+            deleteElementFromContainer(tmp, it);
+            w = false;
+        }
         
-   return checkIfGraphConnected(tmp, vertices, 
-   x, startVertice);
+    return checkIfGraphConnected(tmp, vertices, 
+    x, startVertice);
 }
 \end{lstlisting}
 
-W celu sprawdzenia, czy graf po usunięciu jakiejś krawędzi dalej będzie spójny, potrzebny jest pomocniczy kontener. Zapisujemy do niego aktualne krawędzie, wyszukujemy w nim przekazaną i przekazujemy go do istniejącej już funkcji \verb#checkIfGraphConnected()#.
+W celu sprawdzenia, czy graf po usunięciu jakiejś krawędzi dalej będzie spójny, potrzebny jest pomocniczy kontener. Zapisujemy do niego aktualne krawędzie, wyszukujemy w nim przekazaną krawędź i przekazujemy go do istniejącej już funkcji \verb#checkIfGraphConnected()#.\newline
+
+\noindent Dodatkowe funkcje:
+
+\noindent \verb#addElementToContainer#:\newline
+
+\noindent Dla kontenera sekwencyjnego, ograniczona przez koncept \verb#Sequence#:
+
+\begin{lstlisting}[frame=single]
+template<Sequence S, typename Element>
+void addElementToContainer(S &seq, Element e){
+    seq.push_back(e);
+}
+\end{lstlisting}
+
+\noindent Dla kontenera sekwencyjnego \emph{forward}, ograniczona przez koncept \verb#SequenceForward#:
+
+\begin{lstlisting}[frame=single]
+template<SequenceForward S, typename Element>
+void addElementToContainer(S &seq, Element e){
+    seq.push_front(e);
+}
+\end{lstlisting}
+
+\noindent Dla kontenera asocjacyjnego, ograniczona przez koncept \verb#Associative_container#:
+
+\begin{lstlisting}[frame=single]
+template<Associative_container S, typename Element>
+void addElementToContainer(S &seq, Element e){
+    seq.insert(e);
+}
+\end{lstlisting}
+
+\noindent Funkcja dodaje element do kontenera.\newline
+
+\noindent \verb#findElement#:\newline \newline
+\noindent Dla kontenera sekwencyjnego lub sekwencyjnego \emph{forward}, ograniczona przez koncept \verb#Sequence# lub \verb#SequenceForward#
+\begin{lstlisting}[frame=single]
+template<typename S>
+requires Sequence<S>() || SequenceForward<S>()
+typename S::iterator findElement(S &seq, int e){
+    return find(seq.begin(), seq.end(), e);
+}
+\end{lstlisting}
+
+\noindent Funkcja zwraca znaleziony element w kontenerze \newline
+
+\noindent \verb#getVerticesSize#:
+\begin{lstlisting}[frame=single]
+template<typename S>
+int getVerticesSize(typename S::iterator begin, 
+typename S::iterator end){
+    return distance(begin, end);
+}
+\end{lstlisting}
+
+\noindent Funkcja zwraca rozmiar kontenera.\newline
+
+\noindent \verb#deleteElementFromContainer#:\newline
+
+\noindent Dla kontenera sekwencyjnego, ograniczona przez koncept \verb#Sequence#:
+\begin{lstlisting}[frame=single]
+template<Sequence S>
+void deleteElementFromContainer(S &seq, 
+typename S::iterator it){
+    seq.erase(it);
+}
+\end{lstlisting}
+
+\noindent Dla kontenera sekwencyjnego \emph{forward}, ograniczona przez koncept \verb#SequenceForward#:
+\begin{lstlisting}[frame=single]
+template<SequenceForward S>
+void deleteElementFromContainer(S &seq, 
+typename S::iterator it){
+    seq.remove(*it);
+}
+\end{lstlisting}
+
+\noindent Dla kontenera asocjacyjnego, ograniczona przez koncept \verb#Associative_container#:
+\begin{lstlisting}[frame=single]
+template<Associative_container S>
+void deleteElementFromContainer(S &seq, 
+typename S::iterator it){
+    seq.erase(it);
+}
+\end{lstlisting}
+
+\noindent Funkcja usuwa element z kontenera.
 
 \end{document}

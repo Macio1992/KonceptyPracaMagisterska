@@ -1,0 +1,1409 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage{polski}
+\usepackage[utf8]{inputenc}
+
+\author{Maciej Zbierowski}
+\title{Koncepty jako sposób ograniczania argumentów szablonu}
+
+\linespread{1.3}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{amsthm}
+\usepackage[]{algorithm2e}
+\usepackage{standalone}
+
+\hypersetup{
+	colorlinks=true,
+	linkcolor=black,
+	filecolor=magenta,
+	urlcolor=cyan,
+	pdftitle=Praca Magisterska,
+	bookmarks=true,
+	pdfpagemode=FullScreen
+}
+
+\renewcommand\refname{\vspace*{-4ex}}
+
+\makeatletter
+\renewcommand\@seccntformat[1]{\csname the#1\endcsname.\quad}
+\renewcommand\numberline[1]{#1.\hskip0.7em}
+\makeatother
+
+\newenvironment{university}[1]{
+	\begin{center}
+		\Large{\textsc{#1}}\\[1ex] 
+	\end{center}
+}
+
+\newenvironment{studentname}[2]{
+	\begin{center}	
+		\vspace{#1}\textbf{#2}
+	\end{center}
+}
+
+\newenvironment{workname}[2]{
+	\begin{center}	
+		\vspace{#1}\textbf{\Large{#2}}
+	\end{center}
+}
+
+\newenvironment{fac}[2]{
+	\begin{center}	
+		\emph{#1} #2 
+	\end{center}
+}
+
+\newenvironment{pro}[3]{
+	\begin{flushright}	
+		\vspace{#1}\hspace{#2} \Large{#3} 
+		\end{flushright}
+}
+
+\newenvironment{bottompar}{
+	\par\vspace*{\fill}}{\clearpage
+}
+
+\begin{document}
+	\pagenumbering{gobble}
+	%\maketitle
+
+	\begin{university}{Uniwersytet Gdañski}\end{university}
+\begin{university}{Wydzia³ Matematyki, Fizyki i Informatyki}\end{university}
+\begin{studentname}{80pt}{Maciej Zbierowski}\end{studentname}
+\begin{fac}{Kierunek: }{Informatyka}\end{fac}
+\begin{fac}{Numer albumu: }{206310}\end{fac}
+\begin{workname}{40pt}{Koncepty jako sposób ograniczania argumentów szablonu}\end{workname}
+\begin{pro}{40pt}{100pt}{Praca magisterska napisana pod kierunkiem profesora Christopha Schwarzwellera}\end{pro}
+\begin{bottompar}
+	\begin{center}\textbf{Gdañsk 2017} \end{center}
+\end{bottompar}	
+	
+	\newpage
+	\tableofcontents
+	\pagenumbering{arabic}
+	\newpage
+
+	\section*{Wstêp}
+
+Pomys³ ograniczania argumentów szablonów jest tak stary jak same szablony. Ale dopiero z pocz¹tkiem dwudziestego pierwszego wieku zaczê³y siê powa¿ne prace udoskonalaj¹ce jêzyk \emph{C++}, aby zapewniæ te mo¿liwoœci. Te prace ostatecznie da³y rezultat w postaci \emph{konceptów C++0x}. Rozwój tych funkcjonalnoœci i ich wdro¿enie do biblioteki standardowej \emph{C++} by³y g³ównymi tematami \emph{Komisji Standardu C++}\footnote{(ang. C++ Standards Committee) znana równie¿ pod nazw¹ "ISO JTC1/SC22/WG21". Sk³ada siê z akredytowanych ekspertów z krajów cz³onkowskich, którzy s¹ zainteresowani prac¹ nad C++} dla \emph{C++11}. Te cechy zosta³y ostatecznie usuniête z powodu istotnych nierozwi¹zanych kwestii i bardziej rygorystycznego terminu publikacji.
+
+W 2010 roku wznowiono prace nad konceptami (bez udzia³u komisji). Andrew Sutton i Bjarne Stroustrup opublikowali dokument omawiaj¹cy jak zminimalizowaæ iloœæ konceptów potrzebnych do okreœlania czêœci biblioteki standardowej, a grupa z Uniwersytetu w Indianie zainicjowa³a prace nad now¹ implementacj¹. Potem wspólnie z Alexem Stepanovem (twórc¹ \emph{biblioteki STL}\footnote{(ang. Standard Template Library) biblioteka C++ zawieraj¹ca algorytmy, kontenery, iteratory oraz inne konstrukcje w formie szablonów}) stworzyli raport, w którym przedstawili w pe³ni ograniczone algorytmy biblioteki \emph{STL} i zasugerowali projekt jêzyka, który móg³by wyraziæ te ograniczenia. Próbowano zaprojektowaæ minimalny zestaw funkcji jêzykowych, które umo¿liwi³yby u¿ytkownikom ograniczanie szablonów. Z tych prób narodzi³o siê rozszerzenie jêzyka, zwane \emph{Concepts Lite}.
+
+%Koncepty nie zosta³y w³¹czone w \emph{C++17}. Niektórzy cz³onkowie komisji uwa¿ali, ¿e nie minê³o %wystarczaj¹co du¿o czasu od publikacji specyfikacji technicznej, ¿eby sprawdziæ czy projekt jest %wystarczaj¹co dobry, a wielu z nich by³o niezdecydowanych.
+
+Koncepty s¹ jedn¹ z najbardziej przeanalizowanych, zaproponowanych funkcjonalnoœci \emph{C++}. Powsta³y by wspieraæ programowanie generyczne. Proponowano ró¿ne ich projekty, ostatni to \emph{Concepts TS}\footnote{(ang. The Concepts Technical Specification) Specyfikacja techniczna konceptów}) opublikowany w paŸdzierniku 2015 jako \emph{ISO C++14 Technical Specification}. Ta specyfikacja zosta³a wdro¿ona i jest dostêpna w ga³êzi \emph{GNU Compiler Collection (GCC)}\footnote{zestaw kompilatorów do ró¿nych jêzyków programowania} od wielu lat i zosta³a dostarczana do produkcji jako czêœæ oficjalnych wydañ \emph{GCC} od czasu wydania \emph{GCC-6.0}. Praca ta jest czêœciowo finansowana przez \emph{NSF}\footnote{(ang. The National Science Foundation) amerykañska agencja rz¹dowa wspieraj¹ca podstawowe badania naukowe i edukacje we wszystkich niemedycznych dziedzinach nauki i sztuki.} z wyraŸnym celem wprowadzenia programowania generycznego do g³ównego nurtu jêzyku \emph{C++}. Jak ka¿da funkcjonalnoœæ jêzyka z potencja³em zmiany skali w jakiej piszemy programy, jak myœlimy o programach, jak je organizujemy, zgromadzi³y wiele opinii i sugestii na przestrzeni lat.
+
+
+\addcontentsline{toc}{section}{Wstêp}
+	
+	\section{Szablony - definicja, zastosowania}
+Szablony s¹ jedn¹ z g³ównych funkcjonalnoœci jêzyka \emph{C++}. Dziêki nim mo¿emy dostarczaæ generyczne typy i funkcje, bez kosztów czasu wykonania. Skupiaj¹ siê na pisaniu kodu w sposób niezale¿ny od konkretnego typu, dziêki czemu wspieraj¹ programowanie generyczne. \emph{C++} to bogaty jêzyk wspieraj¹cy polimorficzne zachowania zarówno w czasie wykonania jak i kompilacji. W czasie wykonania u¿ywa on hierarchii klas i wywo³añ funkcji wirtualnych by wspieraæ praktyki zorientowane obiektowo, gdzie wywo³ywana funkcja zale¿y od typu obiektu docelowego podczas czasu wykonania. Natomiast w czasie kompilacji szablony wspieraj¹ programowanie generyczne, gdzie wywo³ywana funkcja zale¿y od statycznego typu czasu kompilacji argumentów szablonu.
+
+Polimorfizm czasu kompilacji by³ w jêzyku od bardzo dawna. Polega na dostarczeniu szablonu, który umo¿liwia kompilatorowi wygenerowanie kodu w czasie kompilacji.
+
+Szablony graj¹ kluczow¹ rolê w projektowaniu obecnych, znanych i popularnych bibliotek i systemów. Stanowi¹ podstawê technik programowania w ró¿nych dziedzinach, pocz¹wszy od konwencjonalnego programowania ogólnego przeznaczenia do oprogramowywania wbudowanych systemów bezpieczeñstwa.
+
+Szablon to coœ w rodzaju przepisu, z którego translator \emph{C++} generuje deklaracje.
+
+\begin{lstlisting}[frame=single]
+template<typename T>
+T kwadrat (T x) {
+   return x * x;
+}
+\end{lstlisting}
+
+Kod ten deklaruje rodzinê funkcji indeksowanych po parametrze typu. Mo¿na odnieœæ siê do konkretnego cz³onka tej rodziny przez zastosowanie konstrukcji \verb#kwadrat<int>#. Mówimy wtedy, ¿e ¿¹dana jest specjalizacja szablonu dla funkcji \verb#kwadrat# z list¹ argumentów szablonu \verb#<int>#. Proces tworzenia specjalizacji nosi nazwê \emph{inicjalizacji szablonu}, potocznie zwan¹ \emph{inicjalizacj¹}. Kompilator \emph{C++} stworzy stosowny odpowiednik definicji funkcji:
+
+\begin{lstlisting}[frame=single]
+int kwadrat(int x) {
+   return x * x;
+}
+\end{lstlisting}
+
+Argument typu \verb#int# jest podstawiony za parametr typu \verb#T#. Kod wynikowy jest sprawdzany pod wzglêdem typu, by zapewniæ brak b³êdów wynikaj¹cych z podmiany. Inicjalizacja szablonu jest wykonywana tylko raz dla danej specyfikacji nawet jeœli program zawiera jej wielokrotne ¿¹dania. 
+
+W przeciwieñstwie do jêzyków takich jak \emph{Ada} czy \emph{System F}, lista argumentów szablonu mo¿e byæ pominiêta z ¿¹dania inicjalizacji szablonu funkcji. Zazwyczaj, wartoœci parametrów szablonu s¹ \emph{dedukowane}\footnote{(ang. deduction) Dedukcja - okreœlenie lub wyliczenie (przez kompilator) argumentu szablonu pominiêtego przy wywo³aniu funkcji.}.
+\newline
+
+\verb#double d = kwadrat(2.0);# \newline
+
+Argument typu jest dedukowany na \verb#double#. Warto zauwa¿yæ, ¿e inaczej ni¿ w jêzykach takich jak \emph{Haskell} czy \emph{System F}, parametry szablonu w \emph{C++} nie s¹ ograniczone wzglêdem typów.
+
+Szablonów u¿ywa siê do zmniejszania kar abstrakcji i zjawiska \emph{code bloat}\footnote{Code bloat - produkowanie kodu, który postrzegany jest jako niepotrzebnie d³ugi, spowalniaj¹cy lub w inny sposób marnuj¹cy zasoby} w systemach wbudowanych w stopniu, który jest niepraktyczny w standardowych systemach obiektowych. Robi siê to z dwóch powodów:
+
+\begin{itemize}
+
+\item Po pierwsze, inicjalizacja szablonu ³¹czy informacje zarówno z definicji, jak i z kontekstu u¿ycia. To oznacza, ¿e pe³na informacja zarówno z definicji jak i z wywo³anych kontekstów (w³¹czaj¹c w to informacje o typach) jest udostêpniana generatorowi kodu. Dzisiejsze generatory kodu dobrze sobie radz¹ z u¿ywaniem tych informacji w celu zminimalizowania czasu wykonania i przestrzeni kodu. Ró¿ni siê to od zwyk³ego przypadku w jêzyku obiektowym, gdzie wywo³uj¹cy i wywo³ywany s¹ kompletnie oddzieleni przez interfejs, który zak³ada poœrednie wywo³ania funkcji.
+
+\item Po drugie, szablon w \emph{C++} jest zazwyczaj domyœlnie tworzony tylko jeœli jest u¿ywany w sposób niezbêdny dla semantyki programu, automatycznie minimalizuj¹c miejsce w pamiêci, które wykorzystuje aplikacja. W przeciwieñstwie do jêzyka \emph{Ada} czy \emph{System F}, gdzie programista musi wyraŸnie zarz¹dzaæ inicjalizacjami.
+
+\end{itemize}
+
+\subsection{Parametryzacja szablonów}
+
+Parametry szablonu s¹ okreœlane na dwa sposoby:
+
+\begin{enumerate}
+
+\item \emph{parametry szablonu} – wyraŸnie wspomniane jako parametry w deklaracji szablonu
+
+\item \emph{nazwy zale¿ne} - wywnioskowane z u¿ycia parametrów w definicji szablonu
+
+\end{enumerate}
+
+W \emph{C++} nazwa nie mo¿e byæ u¿yta bez wczeœniejszej deklaracji. To wymaga od u¿ytkownika ostro¿nego traktowania definicji szablonów, np. w definicji funkcji \verb#kwadrat# nie ma widocznej deklaracji symbolu \verb#*#. Jednak, podczas inicjalizacji szablonu \verb#kwadrat<int># kompilator mo¿e sprowadziæ symbol \verb#*# do (wbudowanego) operatora mno¿enia dla wartoœci \verb#int#. Dla wywo³ania \verb#kwadrat(zespolona(2.0))#, operator * zosta³by rozwi¹zany do (zdefiniowanego przez u¿ytkownika) operatora mno¿enia dla wartoœci \verb#zespolona#. Symbol \verb#*# jest wiêc \emph{nazw¹ zale¿n¹} w definicji funkcji \verb#kwadrat#. Oznacza to, ¿e jest to ukryty parametr definicji szablonu. Mo¿emy uczyniæ z operacji mno¿enia formalny parametr:
+
+\begin{lstlisting}[frame=single]
+template<typename Multiply, typename T>
+T square(T x) {
+   return Multiply() (x,x);
+}
+\end{lstlisting}
+
+Pod-wyra¿enie \verb#Multiply()# tworzy obiekt funkcji, który wprowadza operacjê mno¿enia wartoœci typu \verb#T#. Pojêcie \emph{nazw zale¿nych} pomaga utrzymaæ liczbê jawnych argumentów.
+
+\subsection{Inicjalizacje i sprawdzanie}
+
+Minimalne przetwarzanie semantyczne odbywa siê, gdy po raz pierwszy pojawia siê definicja szablonu lub jego u¿ycie. Pe³ne przetwarzanie semantyczne jest przesuwane na czas inicjalizacji (tu¿ przed czasem linkowania), na podstawie ka¿dej instancji. Oznacza to, ¿e za³o¿enia dotycz¹ce argumentów szablonu nie s¹ sprawdzane przed czasem inicjalizacji.\newline
+
+\noindent \verb#string x = "testowy tekst";# \newline
+\verb#kwadrat(x);# \newline
+
+Bezsensowne u¿ycie zmiennej \verb#string# jako argumentu funkcji \verb#kwadrat# nie jest wy³apane w momencie u¿ycia. Dopiero w czasie inicjalizacji kompilator odkryje, ¿e nie ma odpowiedniej deklaracji dla operatora \verb#*#. To ogromny praktyczny b³¹d, bo inicjalizacja mo¿e byæ przeprowadzona przez kod napisany przez u¿ytkownika, który nie napisa³ definicji funkcji \verb#kwadrat# ani definicji \verb#string#. Programista, który nie zna³ definicji funkcji \verb#kwadrat# ani \verb#string# mia³by ogromne trudnoœci w zrozumieniu komunikatów b³êdów zwi¹zanych z ich interakcj¹ (np. ”illegal operand for \verb#*#”).
+
+Istnienie symbolu operatora \verb#*# nie jest wystarczaj¹ce by zapewniæ pomyœln¹ kompilacjê funkcji \verb#kwadrat#. Musi istnieæ operator \verb#*#, który przyjmuje argumenty odpowiednich typów i ten operator musi byæ bezkonkurencyjnym dopasowaniem wed³ug zasad przeci¹¿ania \emph{C++}. Dodatkowo funkcja \verb#kwadrat# przyjmuje argumenty przez wartoœæ i zwraca swój wynik przez wartoœæ. Z tego wynika, ¿e musi byæ mo¿liwe skopiowanie obiektów dedukowanego typu. Potrzebny jest rygorystyczny framework do opisywania wymagañ definicji szablonów na ich argumentach.
+
+Doœwiadczenie podpowiada, ¿e pomyœlna kompilacja i linkowanie mo¿e nie gwarantowaæ koñca problemów. Udana budowa pokazuje tylko, ¿e inicjalizacje szablonów by³y poprawne pod wzglêdem typów, dostaj¹c argumenty które zosta³y przekazane. Co z typami argumentów szablonu i wartoœciami, których nie przekazano do szablonów? Definicja szablonu mo¿e zawieraæ przypuszczenia na temat przekazanych argumentów ale nie zadzia³a dla innych, prawdopodobnie rozs¹dnych argumentów. Uproszczona wersja klasycznego przyk³adu:
+
+\begin{lstlisting}[frame=single]
+template<typename FwdIter>
+bool czyJestPalindromem(FwdIter first, FwdIter last){
+   if(last <= first) return true;
+   if(*first != *last) return false;
+   return czyJestPalindromem(++first, --last);
+}
+
+\end{lstlisting}
+
+Funkcja testuje czy sekwencja wyznaczona przez parê iteratorów do jego pierwszego i ostatniego elementu, jest palindromem. Przyjmuje siê, ¿e te iteratory s¹ z kategorii \emph{forward iterator}. To znaczy, ¿e powinny wspieraæ co najmniej operacje takie jak: \verb#*#, \verb#!=# i \verb#++#. Definicja funkcji \verb#czyJestPalindromem# bada czy elementy sekwencji zmierzaj¹ z pocz¹tku i koñca do œrodka. Funkcja mo¿e byæ testowana u¿ywaj¹c \verb#vector#, tablicy w stylu \verb#C# i \verb#string#. W ka¿dym przypadku nasz szablon funkcji zainicjalizuje siê i wykona siê poprawnie. Niestety, umieszczenie tej funkcji w bibliotece by³oby du¿ym b³êdem. Nie wszystkie sekwencje wspieraj¹ operatory \verb#--# i $\leq$. Np. iteratory typu \emph{forward list} nie wspieraj¹. Eksperci u¿ywaj¹ wyszukanych, regularnych technik by unikn¹æ takich problemów. Jednak¿e, fundamentalny problem jest taki, ¿e definicja szablonu nie jest (wed³ug siebie) dobr¹ specyfikacj¹ wymagañ na swoje parametry.
+
+\subsection{Wydajnoœæ}
+
+Szablony graj¹ kluczow¹ rolê w programowaniu w \emph{C++} dla wydajnych aplikacji. Ta wydajnoœæ ma trzy Ÿród³a:
+
+\begin{itemize}
+
+\item eliminacja wywo³añ funkcji na korzyœæ \emph{inliningu}\footnote{Optymalizacja kompilatora, która zamienia wywo³anie funkcji na jej cia³o w czasie kompilacji.}
+\item ³¹czenie informacji z ró¿nych kontekstów w celu lepszej optymalizacji
+\item unikanie generowania kodu dla niewykorzystanych funkcji
+
+\end{itemize}
+
+Pierwszy punkt nie odnosi siê tylko do szablonów ale ogólnie do cech funkcji \emph{inline} w \emph{C++}. 
+Wydajnoœæ ta przek³ada siê zarówno na czas wykonania jak i pamiêæ. Szablony mog¹ równoczeœnie zmniejszyæ obie wydajnoœci. Zmniejszenie rozmiaru kodu jest szczególnie wa¿ne, poniewa¿ w przypadku nowoczesnych procesorów zmniejszenie rozmiaru kodu poci¹ga za sob¹ zmniejszenie ruchu w pamiêci i poprawienie wydajnoœci pamiêci podrêcznej.
+
+%Jakkolwiek, \emph{inlining} jest istotny dla drobno-granularnej parametryzacji, któr¹ powszechnie stosuje siê w bibliotece \emph{STL} i innych bibliotekach  bazuj¹cych na generycznych technikach programowania. 
+
+\begin{lstlisting}[frame=single]
+template<typename FwdIter, typename T>
+T suma(FwdIter first, FwdIter last, T init){
+   for(FwdIter cur = first, cur != last, T init)
+      init = init + *cur;
+   return init;
+}
+
+\end{lstlisting}
+
+Funkcja \verb#suma# zwraca sumê elementów jej sekwencji wejœciowej u¿ywaj¹c trzeciego argumentu ("akumulatora") jako wartoœci pocz¹tkowej\newline
+
+\noindent \verb#vector<zespolona<double>> v;#  \newline
+\verb#zespolona<double> z = 0;# \newline
+\verb#z = suma(v.begin(), v.end(), z);# \newline
+
+By wykonaæ swoj¹ pracê, \verb#suma# u¿yje operatorów dodawania i przypisania na elementach typu \verb#zespolona<double># i dereferencji iteratorów \verb#vector<zespolona<double>>#.  Dodanie wartoœci typu \verb#zespolona<double># poci¹ga za sob¹ dodanie wartoœci typu \verb#double#. By zrobiæ to wydajnie wszystkie te operacje musz¹ byæ \emph{inline}.  Zarówno \verb#vector# jak i \verb#zespolona# s¹ typami zdefiniowanymi przez u¿ytkownika. Oznacza to, ¿e typy te jak i ich operacje s¹ zdefiniowane gdzie indziej w kodzie Ÿród³owym \emph{C++}. Obecne kompilatory \emph{C++} radz¹ sobie z tym przyk³adem, dziêki czemu jedyne wygenerowane wywo³anie to wywo³anie funkcji \verb#suma#. Dostêp do pól zmiennej \verb#vector# staje siê prost¹ operacj¹ maszyny ³aduj¹cej, dodawanie wartoœci typu \verb#zespolona# staje siê dwiema instrukcjami maszyny dodaj¹cej dwa elementy zmiennoprzecinkowe. Aby to osi¹gn¹æ, kompilator potrzebuje dostêpu do pe³nej definicji \verb#vector# i \verb#zespolona#. Jednak wynik jest ogromn¹ popraw¹ (prawdopodobnie optymaln¹) w stosunku do naiwnego podejœcia generowania wywo³ania funkcji dla ka¿dego u¿ycia operacji na parametrze szablonu. Oczywiœcie instrukcja dodawania wykonuje siê znacznie szybciej ni¿ wywo³anie funkcji zawieraj¹cej dodawanie. Poza tym, nie ma ¿adnego wstêpu wywo³ania funkcji, przekazywania argumentów itd., wiêc kod wynikowy jest równie¿ wiele mniejszy. Dalsze zmniejszanie rozmiaru generowanego kodu uzyskuje siê nie wysy³aj¹c kodu niewykorzystywanych funkcji. Klasa szablonu \verb#vector# ma wiele funkcji, które nie s¹ wykorzystywane w tym przyk³adzie. Podobnie szablon klasy \verb#zespolona# ma wiele funkcji i funkcji niesk³adowych (nienale¿¹cych do funkcji klasy). Standard \emph{C++} gwarantuje, ¿e nie jest emitowany ¿aden kod dla tych niewykorzystanych funkcji. 
+
+Inaczej sprawa wygl¹da, gdy argumenty s¹ dostêpne za poœrednictwem interfejsów zdefiniowanych jako wywo³ania funkcji poœrednich. Ka¿da operacja staje siê wtedy wywo³aniem funkcji w pliku wykonywalnym generowanym dla kodu u¿ytkownika, takiego jak \verb#suma#. Co wiêcej, by³oby wyraŸnie nietypowe unikaæ odk³adania kodu nieu¿ywanych (wirtualnych) funkcji sk³adowych. Jest to poza zdolnoœci¹ obecnych kompilatorów \emph{C++} i prawdopodobnie pozostanie takie dla g³ównych programów \emph{C++}, gdzie oddzielna kompilacja i ³¹czenie dynamiczne jest norm¹. Ten problem nie jest wyj¹tkowy dla \emph{C++}. Opiera siê on na podstawowej trudnoœci w ocenieniu, która czêœæ kodu Ÿród³owego jest u¿ywana, a która nie, gdy jakakolwiek forma procesu \emph{run-time dispatch}\footnote{Zwany równie¿ \emph{dynamic dispatch} proces wybierania, implementacji polimorficznej operacji (metody lub funkcji) do wywo³ania w czasie uruchomienia.} ma miejsce. Szablony nie cierpi¹ na ten problem bo ich specjalizacje s¹ rozwi¹zywane w czasie kompilacji.\newline
+
+\noindent \verb#vector<int> v;#  \newline
+\verb#zespolona<double> s = 0;#  \newline
+\verb#s = suma(v.begin(), v.end(), s);#  \newline
+
+W powy¿szej funkcji dodawanie wykonywane jest przez konwertowanie wartoœci \verb#int# do wartoœci \verb#double# i potem dodawanie tego do akumulatora \verb#s#, u¿ywaj¹c operatora \verb#+# typu \verb#zespolona<double># i \verb#double#. To podstawowe dodawanie zmiennoprzecinkowe. Kwestia jest taka, ¿e operator \verb#+# w funkcji \verb#suma# zale¿y od dwóch parametrów szablonu i le¿y to w kwestii kompilatora by wybraæ bardziej odpowiedni operator \verb#+# bazuj¹c na informacji o tych dwóch argumentach. By³oby mo¿liwe utrzymanie lepszego rozdzielenia miêdzy ró¿nymi kontekstami przez przekszta³canie typu elementu w typ akumulatora. W takim przypadku spowodowa³oby to powstanie dodatkowego \verb#zespolona<double># dla ka¿dego elementu i dodania dwóch wartoœci typu \verb#zespolona#. Rozmiar kodu i czas wykonywania by³yby wiêksze ni¿ dwukrotnie.
+
+Du¿e iloœci prawdziwego oprogramowania zale¿¹ od optymalizacji. W konsekwencji udoskonalone sprawdzanie typu, co zosta³o obiecane przy u¿yciu konceptów, nie mo¿e kosztowaæ tych optymalizacji.
+	
+	\newpage
+	
+	\section{Koncepty}
+
+W 1987 próbowano projektowaæ szablony z odpowiednimi interfejsami. Chciano by szablony:
+
+\begin{itemize}
+
+\item by³y w pe³ni ogólne i wyraziste
+\item by nie wykorzystywa³y wiêkszych zasobów w porównaniu do kodowania rêcznego
+\item by mia³y dobrze okreœlone interfejsy
+
+\end{itemize}
+
+\noindent D³ugo nie da³o siê osi¹gn¹æ tych trzech rzeczy, ale za to osi¹gniêto:
+
+\begin{itemize}
+
+\item \emph{kompletnoœæ Turinga}\footnote{(ang. Turing Completness) umiejêtnoœæ do rozwi¹zania ka¿dego zadania, czyli udzielenie odpowiedzi na ka¿de zadanie. Program, który jest kompletny wed³ug Turinga mo¿e byæ wykorzystany do symulacji jakiejkolwiek 1-taœmowej maszyny Turinga}
+\item lepsz¹ wydajnoœæ (w porównaniu do kodu pisanego rêcznie)
+\item kiepskie interfejsy (praktycznie \emph{typowanie kaczkowe czasu kompilacji})\footnote{(ang. duck typing) rozpoznanie typu obiektu, nie na podstawie deklaracji, ale przez badanie metod udostêpnionych przez obiekt}
+
+\end{itemize}
+
+Brak dobrze okreœlonych interfejsów prowadzi do szczególnie z³ych wiadomoœci b³êdów. Dwie pozosta³e w³aœciwoœci uczyni³y z szablonów sukces.
+
+Rozwi¹zanie problemu specyfikacji interfejsu zosta³o, przez Alexa Stepanova nazwane \textbf{konceptami}. \textbf{Koncept} to zbiór wymagañ argumentów szablonu. Mo¿na te¿ go nazwaæ systemem typów dla szablonów, który obiecuje znacz¹co ulepszyæ diagnostyki b³êdów i zwiêkszyæ si³ê ekspresji, tak¹ jak przeci¹¿anie konceptowe oraz czêœciow¹ specjalizacjê szablonu funkcji.
+
+Koncepty zosta³y opublikowane i zaimplementowane w wersji 6.1 kompilatora \emph{GCC} w kwietniu 2016 roku. Fundamentalnie to predykaty czasu kompilacji typów i wartoœci. Mog¹ byæ ³¹czone zwyk³ymi operatorami logicznymi (\verb#&&#, \verb#||#, \verb#!#)
+
+\subsection{Ulepszenie programowania generycznego}
+
+Specyfikacja konceptów zawiera wiele ulepszeñ, by lepiej wspieraæ programowanie generyczne przez:
+\begin{itemize}
+
+\item umo¿liwienie wyraŸnego okreœlania ograniczeñ argumentów szablonu jako czêœci deklaracji szablonów
+\item wsparcie mo¿liwoœci przeci¹¿ania szablonów funkcji, czêœciowego okreœlania szablonów klas i zmiennych opartych na tych ograniczeniach
+\item dostarczenie sk³adni do definiowania konceptów i wymagañ narzuconych na argumenty szablonu
+\item ujednolicenie \verb#auto#\footnote{S³owo kluczowe wg standardu \emph{C++11}, oznaczaj¹ce zastêpczy typ zmiennej, który zostanie wydedukowany na podstawie wartoœci za pomoc¹ której zmienna zostanie zainicjalizowana.} i konceptów w celu zapewnienia jednolitej i dostêpnej notacji dla programowania ogólnego
+\item radykaln¹ poprawê jakoœci wiadomoœci b³êdów wynikaj¹cych z niew³aœciwego wykorzystania szablonów
+\item osi¹gniêcie tego wszystkiego bez ¿adnego narzucania jakichkolwiek dodatkowych zasobów ani znacznego wzrostu czasu kompilacji, bez ograniczania tego, co mo¿na wyraziæ przy u¿yciu szablonów
+
+\end{itemize}
+
+\noindent\verb#double pierwiastek(double d);# \newline
+\verb#double d = 7;# \newline
+\verb#double d2 = pierwiastek(d);# \newline
+\verb#vector<string> v = {"jeden", "dwa"};# \newline
+\verb#double d3 = pierwiastek(v);# \newline
+
+Funkcja \verb#pierwiastek#, która jako parametr przyjmuje zmienn¹ typu \verb#double#. Jeœli zostanie jej dostarczony taki typ, wszystko bêdzie w porz¹dku, ale jeœli inny, od razu kompilator wyprodukuje pomocn¹ wiadomoœæ b³êdu.\newline
+
+Kod funkcji \verb#sortuj# zale¿y od ró¿nych w³aœciwoœci typu \verb#T#, takiej jak posiadanie operatora \verb#[]#.
+\newpage
+
+\begin{lstlisting}[frame=single]
+template<class T>
+void sortuj(T &c){
+   //kod sortowania
+}
+\end{lstlisting}
+
+\noindent \verb#vector<string> v = {"jeden", "dwa"};# \newline
+\verb#sortuj(v);# \newline
+\verb#//OK: zmienna v ma wszystkie syntaktyczne w³aœciwoœci wymagane# \newline
+\verb#przez funkcjê sort# \newline\newline
+\verb#double d = 7;# \newline
+\verb#sortuj(d);# \newline
+\verb#//B³¹d: zmienna d nie ma operatora []#\newline
+
+\noindent Pojawi³o siê kilka problemów:
+\begin{itemize}
+
+\item wiadomoœæ b³êdu jest niejednoznaczna i daleko jej do precyzyjnej i pomocnej, tak jak : "B³¹d: zmienna d nie ma operatora []"
+
+\item aby u¿yæ funkcji \verb#sortuj#, musimy dostarczyæ jej definicjê, a nie tylko deklaracje. Jest to ró¿nica w sposobie pisania zwyk³ego kodu i zmienia siê model organizowania kodu
+
+\item wymagania funkcji dotycz¹ce typu argumentu s¹ domniemane w cia³ach ich funkcji
+
+\item wiadomoœæ b³êdu funkcji pojawi siê tylko podczas inicjalizacji szablonu, a to mo¿e siê zdarzyæ bardzo d³ugo po momencie wywo³ania
+
+\item Notacja \verb#template<typename T># jest powtarzalna, bardzo nielubiana.
+
+\end{itemize}
+
+U¿ywaj¹c konceptu, mo¿emy dotrzeæ do Ÿród³a problemu, poprzez poprawne okreœlenie wymagañ argumentów szablonu. Fragment kodu u¿ywaj¹cego konceptu \verb#Sortable#:\newline
+
+\noindent \verb#void sortuj(Sortable &c);//(1)#\newline
+\verb#vector<string> v = {"jeden", "dwa"};#\newline
+\verb#sortuj(v);//(2)# \newline
+\verb#double d = 7;# \newline
+\verb#sortuj(d);//(3)# \newline
+
+\noindent (1) - akceptuj jak¹kolwiek zmienn¹ \verb#c#, która jest typu \verb#Sortable# \newline
+(2) - OK: \verb#v# jest kontenerem typu \verb#Sortable# \newline
+(3) - B³¹d: d nie jest \verb#Sortable# (\verb#double# nie dostarcza operatora [], itd.) \newline
+
+Kod jest analogiczny do przyk³adu \verb#pierwiastek#. Jedyna ró¿nica polega na tym, ¿e:
+\begin{itemize}
+
+\item w przypadku typu \verb#double#, projektant jêzyka wbudowa³ go do kompilatora jako okreœlony typ, gdzie jego znaczenie zosta³o okreœlone w dokumentacji
+
+\item zaœ w przypadku \verb#Sortable#, u¿ytkownik okreœli³ co on oznacza w kodzie. Typ jest \verb#Sortable# jeœli posiada w³aœciwoœci \verb#begin()# i \verb#end()# dostarczaj¹ce losowy dostêp do sekwencji zawieraj¹cej elementy, które mog¹ byæ porównywane u¿ywaj¹c operatora \verb#<#
+
+\end{itemize}
+
+Teraz otrzymujemy bardziej jasny komunikat b³êdu. Jest on generowany natychmiast w momencie gdzie kompilator widzi b³êdne wywo³anie (\verb#sortuj(d);#)\newline
+
+Cele konceptów to, zrobienie:
+\begin{itemize}
+
+\item kodu generycznego tak prostym jak niegeneryczny
+
+\item bardziej zaawansowanego kodu generycznego tak ³atwym do u¿ycia i nie tak trudnym do
+pisania
+
+\end{itemize}
+
+\subsection{System konceptów}
+
+Reprezentacja definicji szablonu w \emph{C++} to zazwyczaj \emph{drzewo wyprowadzania}\footnote{(ang. Parse Tree) - uporz¹dkowane, zakorzenione drzewo, które reprezentuje strukturê sk³adniow¹ ³añcucha znakowego zgodnie z gramatyk¹ bezkontekstow¹. Zwane równie¿ drzewem sk³adniowym}. U¿ywaj¹c identycznych technik kompilatora, mo¿emy przekonwertowaæ koncepty do takich drzew. Posiadaj¹c to, sprawdzanie konceptów mo¿emy zaimplementowaæ jako \emph{abstrakcyjne drzewo dopasowañ}. Wygodnym sposobem implementowania takiego dopasowywania jest generowanie i porównywanie zestawów wymaganych funkcji i typów (zwane \emph{zestawami ograniczeñ}) z definicji szablonów i konceptów. Definicja konceptu to zestaw równañ \emph{drzewa AST}\footnote{(ang. Abstract Syntax Tree) Drzewo sk³adniowe, drzewo sk³adni abstrakcyjnej - drzewo etykietowane, wynik przeprowadzenia analizy sk³adniowej zzdania (s³owa) zgodnie z pewn¹ gramatyk¹.} z za³o¿eniami typu. \newline
+
+\noindent Koncepty daj¹ dwa zamys³y:
+
+\begin{enumerate}
+
+\item w \emph{definicjach szablonu}, koncepty dzia³aj¹ jak regu³y os¹dzania typowania. Jeœli \emph{drzewo AST} zale¿y od parametrów szablonu i nie mo¿e byæ rozwi¹zane przez otaczaj¹ce œrodowisko typowania, wtedy musi siê pojawiæ w strzeg¹cych cia³ach konceptów. Takie zale¿ne \emph{drzewa AST} s¹ domniemanymi parametrami konceptów i zostan¹ rozwi¹zane przez sprawdzanie konceptów w momentach u¿ycia.
+
+\item w \emph{u¿yciach szablonów}, koncepty dzia³aj¹ jak zestawy predykatów, które argumenty szablonu musz¹ spe³niaæ. Sprawdzanie konceptów rozwi¹zuje domniemane parametry w momentach inicjalizacji.
+
+\end{enumerate}
+
+Jeœli zestaw konceptów definicji szablonu okreœla zbyt ma³o operacji, kompilacja szablonu nie powiedzie siê z powodu sprawdzania konceptów. Szablon bêdzie w takim wypadku "prawie ograniczony". Odwrotnie, jeœli zestaw konceptów definicji szablonu okreœla wiêcej operacji ni¿ potrzeba, niektóre inne uzasadnione u¿ycia mog¹ równie¿ zawieŸæ sprawdzanie konceptów. Szablon bêdzie wtedy "nad ograniczony". Przez "inne uzasadnione" rozumie siê, ¿e sprawdzanie typów uda³oby siê w przypadku braku sprawdzania konceptów.
+
+
+\subsection{Definicja konceptu}
+
+Rozró¿niamy dwa rodzaje konceptów:\newline\newline
+\noindent\textbf{Zmienna konceptowa} - jest typem czasu kompilacji i nie niesie za sob¹ ¿adnych kosztów czasu wykonania.\newline
+
+\noindent Najprostsza forma zmiennej konceptowej:
+\begin{lstlisting}[frame=single]
+template<template T>
+concept bool zmienna_konceptowa = true;
+\end{lstlisting}
+
+Taka zmienna nie mo¿e byæ zadeklarowana z jakimkolwiek innym typem ni¿ \verb#bool# oraz bez inicjalizatora. B³¹d pojawi siê te¿, gdy inicjalizatorem nie bêdzie ograniczone wyra¿enie.
+
+\noindent Przyk³ad u¿ycia:
+\begin{lstlisting}[frame=single]
+template<template T>
+requires zmienna_konceptowa<T>
+void f(T t){
+   std::cout << t << "\n";
+}
+\end{lstlisting}
+
+\noindent\textbf{Funkcja konceptowa} - wygl¹da i zachowuje siê jak zwyk³a funkcja.\newline
+\begin{lstlisting}[frame=single]
+template<template T>
+concept bool funkcja_konceptowa(){
+   return true;
+}
+\end{lstlisting}
+
+Funkcja konceptowa nie mo¿e:
+\begin{itemize}
+\item byæ zadeklarowana z ¿adnym specyfikatorem funkcji w deklaracji
+\item zwracaæ ¿adnego innego typu ni¿ \verb#bool#
+\item mieæ ¿adnych elementów w liœcie parametrów
+\item mieæ innego cia³a ni¿ \verb#{ return E; }#, gdzie \verb#E# to wyra¿enie ograniczone
+\end{itemize}
+
+\newpage
+\noindent Przyk³ad u¿ycia:
+\begin{lstlisting}[frame=single]
+template<template T>
+requires funkcja_konceptowa<T>()
+void f(T t){
+   std::cout << t << "\n";
+}
+\end{lstlisting}
+
+\subsection{Okreœlanie interfejsu szablonu}
+
+\begin{lstlisting}[frame=single]
+template<typename S, typename T>
+   requires Sequence<S> && 
+   Equality_comparable<Value_type<S>, T>
+Iterator_of<S> szukaj(S &seq, const T &value);
+\end{lstlisting}
+
+Powy¿szy szablon przyjmuje dwa argumenty typu szablonu. Pierwszy argument typu musi byæ typu \verb#Sequence# i musimy byæ w stanie porównywaæ elementy sekwencji ze zmienn¹ \verb#value# u¿ywaj¹c operatora \verb#==# (st¹d \verb#Equality_comparable<Value_type<S>, T>#). Funkcja \verb#szukaj# przyjmuje sekwencjê przez referencjê i \verb#value# do znalezienia jako referencjê \verb#const#. Zwraca iterator.
+
+Sekwencja musi posiadaæ \verb#begin()# i \verb#end()#. Koncept \verb#Equality_comparable# jest zaproponowany jako koncept standardowej biblioteki. Wymaga by jego argument dostarcza³ operatory \verb#==# i \verb#!=#. Ten koncept przyjmuje dwa argumenty. Wiele konceptów przyjmuje wiêcej ni¿ jeden argument. Koncepty mog¹ opisywaæ nie tylko typy, ale równie¿ zwi¹zki miêdzy typami. \newline
+
+U¿ycie funkcji \verb#szukaj#: \newline
+
+\begin{lstlisting}[frame=single]
+void test(vector<string> &v, list<double> &list){
+   auto a0 = szukaj(v, "test");(1)
+   auto p1 = szukaj(v, 0.7);(2)
+   auto p2 = szukaj(list, 0.7);(3)
+   auto p3 = szukaj(list, "test");(4)
+   
+   if(a0 != v.end()){
+     //Znaleziono "test"
+   }
+}
+\end{lstlisting}
+
+1) OK
+2) B³¹d: nie mo¿na porównaæ string do double
+3) OK
+4) B³¹d: nie mo¿na porównaæ double ze string
+
+\subsection{Notacja skrótowa}
+Gdy chcemy podkreœliæ, ¿e argument szablonu ma byæ sekwencj¹, piszemy:
+
+\begin{lstlisting}[frame=single]
+template<typename Seq>
+   requires Sequence<Seq>
+void algo(Seq &s);
+
+\end{lstlisting}
+
+To oznacza, ¿e potrzebujemy argumentu typu \verb#Seq#, który musi byæ typu \verb#Sequence#, lub innymi s³owy: szablon przyjmuje argument typu, który musi byæ typu \verb#Sequence#. Mo¿emy to uproœciæ:
+
+\begin{lstlisting}[frame=single]
+template<Sequence Seq>
+void algo(Seq &s);
+
+\end{lstlisting}
+
+To znaczy dok³adnie to samo co d³u¿sza wersja, ale jest krótsza i lepiej wygl¹da. U¿ywamy tej notacji dla konceptów z jednym argumentem. Np. moglibyœmy uproœciæ funkcjê \verb#szukaj#: \newline
+
+\begin{lstlisting}[frame=single]
+template<Sequence S, typename T>
+   requires Equality_comparable<Value_type<S>, T>
+Iterator_of<S> szukaj(S &seq, const T &value);
+\end{lstlisting}
+
+Upraszcza to sk³adniê jêzyka. Sprawia, ¿e nie jest zbyt zagmatwana.
+
+\subsection{Definiowanie konceptów}
+
+Koncepty, takie jak \verb#Equality_comparable# czêsto mo¿na znaleŸæ w bibliotekach (np. w \verb#The Ranges TS#), ale koncepty mo¿na te¿ definiowaæ samodzielnie: \newline
+
+\begin{lstlisting}[frame=single]
+template<typename T>
+concept bool Equality_comparable = requires (T a, T b){
+   { a == b } -> bool;
+   { a != b } -> bool;
+};
+
+\end{lstlisting}
+
+Koncept ten zosta³ zdefiniowany jako szablonowa zmienna. Typ musi dostarczaæ operacje \verb#==# i \verb#!=#, z których ka¿da musi zwracaæ wartoœæ \verb#bool#, ¿eby byæ \verb#Equality_comparable#
+. Wyra¿enie \verb#requires# pozwala na bezpoœrednie wyra¿enie jak typ mo¿e byæ u¿yty:
+
+\begin{itemize}
+
+\item \verb#{ a == b }#, oznajmia, ¿e dwie zmienne typu \verb#T# powinny byæ porównywalne u¿ywaj¹c operatora \verb#==#
+
+\item \verb#{ a == b } -> bool# mówi ¿e wynik takiego porównania musi byæ typu \verb#bool#
+
+\end{itemize}
+
+Wyra¿enie \verb#requires# jest w³aœciwie nigdy nie wykonywane. Zamiast tego kompilator patrzy na wymagania  i zwraca \verb#true# jeœli siê skompiluj¹ a \verb#false# jeœli nie. To bardzo potê¿ne u³atwienie. 
+
+\begin{lstlisting}[frame=single]
+template<typename T>
+concept bool Sequence = requires(T t) {
+   typename Value_type<T>;
+   typename Iterator_of<T>;
+   
+   { begin(t) } -> Iterator_of<T>;
+   { end(t) } -> Iterator_of<T>;
+   
+   requires Input_iterator<Iterator_of<T>>;
+   requires Same_type<Value_type<T>,
+   Value_type<Iterator_of<T>>>;
+};
+
+\end{lstlisting}
+
+¯eby byæ typu \verb#Sequence#:
+
+\begin{itemize}
+
+\item typ \verb#T# musi mieæ dwa powi¹zane typy: \verb#Value_type<T># i \verb#Iterator_of<T>#. Oba typy to zwyk³e \emph{aliasy szablonu}\footnote{nazwa odwo³uj¹ca siê do rodziny typów.}. Podanie tych typów w wyra¿eniu \verb#requires# oznacza, ¿e typ \verb#T# musi je posiadaæ ¿eby byæ \verb#Sequence#.
+
+\item typ \verb#T# musi mieæ operacje \verb#begin()# i \verb#end()#, które zwracaj¹ odpowiednie iteratory.
+
+\item odpowiedni iterator oznacza to, ¿e typ iteratora typu \verb#T# musi byæ typu \verb#Input_iterator# i typ wartoœci typu \verb#T# musi byæ taki sam jak jej wartoœæ typu jej iteratora. \verb#Input_iterator# i \verb#Same_type# to koncepty z biblioteki.
+
+\end{itemize}
+
+Teraz w koñcu mo¿emy napisaæ koncept \verb#Sortable#. ¯eby typ by³ \verb#Sortable#, powinien byæ sekwencj¹ oferuj¹c¹ losowy dostêp i posiadaæ typ wartoœci, który wspiera porównania u¿ywaj¹ce operatora \verb#<#:
+
+\begin{lstlisting}[frame=single]
+template<typename T>
+concept bool Sortable = Sequence<T> &&
+Random_access_iterator<Iterator_of<T>> &&
+Less_than_comparable<Value_type<T>>;
+\end{lstlisting}
+
+\verb#Random_access_iterator# i \verb#Less_than_comparable# s¹ zdefiniowane analogicznie do \verb#Equality_comparable#
+
+Czêsto, wymagane s¹ relacje pomiêdzy konceptami. Np. koncept \newline \verb#Equality_comparable# jest zdefiniwoany by wymaga³ jeden typ. Mo¿na zdefiniowaæ ten koncept by radzi³ sobie z dwoma typami:
+
+\begin{lstlisting}[frame=single]
+template<typename T, typename U>
+concept bool Equality_comparable = requires(T a, U b){
+   { a == b } -> bool;
+   { a != b } -> bool;
+   { b == a } -> bool;
+   { b != a } -> bool;
+};
+\end{lstlisting}
+
+To pozwala na porównywanie zmiennych typu \verb#int# z \verb#double# i \verb#string# z \verb#char*#, ale nie \verb#int# z \verb#string#.
+	
+	\newpage
+	
+	\section{Przeci¹¿anie}
+
+
+Koncepty s¹ u¿yteczne nie tylko w poprawianiu wiadomoœci b³êdów i precyzyjnej specyfikacji interfejsów. Zwiêkszaj¹ równie¿ ekspresyjnoœæ. U¿ywane s¹ do skracania kodu, robieniu go generycznym i zwiêkszania wydajnoœci. Wyj¹tkowo potê¿n¹ cech¹ jest ich rola w przeci¹¿aniu funkcji. 
+
+W kwietniu 2016 zosta³ wydany kompilator \emph{GCC 6.2}. Ta wersja zawiera³a g³ówne unowoczeœnienie dwóch komponentów implementacji konceptów. Jeden z nich to generator diagnostyki, który zosta³ znacznie odnowiony, aby zapewniæ dok³adn¹ diagnostykê niepowodzeñ konceptu przy sprawdzaniu czy jest spe³niony. Drugi to wsparcie dla przeci¹¿ania ograniczeñ, które zosta³o ca³kowicie przepisane, aby zapewniæ znaczne zwiêkszenie wydajnoœci. W \emph{GCC} mo¿na teraz u¿ywaæ konceptów do projektów o znacznej wielkoœci i z³o¿onoœci.
+
+Niektórzy twierdz¹, ¿e wyra¿enia takie jak \verb#SFINAE#\footnote{(ang. Substitution failure is not an error) sytuacja w \emph{C++} gdzie nieprawid³owe zast¹pienie parametrów szablonu nie jest samo w sobie b³êdem}, \verb#constexpr if#\footnote{Wyra¿enie, którego wartoœæ warunku musi byæ kontekstowo konwertowanym sta³ym wyra¿eniem typu bool.}, \newline \verb#static_assert#\footnote{Wykonuje sprawdzanie porównania w czasie kompilacji} i m¹dre techniki metaprogramowania w zupe³noœci wystarcz¹ do przeci¹¿ania. To oczywiœcie poprawne myœlenie, lecz jest to obni¿anie poziomu abstrakcji, co skutkuje tym, ¿e programuje siê w sposób ¿eby by³o zrobione a nie jak powinno byæ. Wynikiem jest wiêcej pracy dla programisty, zwiêkszona iloœæ b³êdów i mniej szans optymalizacyjnych. \emph{C++} nie jest przeznaczony do metaprogramowania szablonów. Koncepty pomagaj¹ nam podnieœæ poziom programowania i u³atwiæ kod, bez dodawania kosztów czasu wykonania. \newline
+
+\begin{lstlisting}[frame=single]
+template<Sequence S, Equality_comparable T>
+  requires Same_as<T, value_type_t<S>>
+bool czyIstnieje(const S &seq, const T &value) {
+  for (const auto &x : range)
+    if (x == value)
+      return true;
+  return false;
+}
+\end{lstlisting}
+
+\noindent Funkcja \verb#czyIstnieje# przyjmuje sekwencjê typu \verb#Sequence# jako pierwszy argument i wartoœæ \verb#Equality comparable# jako drugi. Algorytm ma trzy ograniczenia:
+
+\begin{itemize}
+
+\item \verb#seq# musi byæ typu \verb#Sequence#
+\item \verb#value# musi byæ typu \verb#Equality_comparable#
+\item typ \verb#value# musi byæ taki sam jak element typu \verb#seq#
+
+\end{itemize}
+
+\noindent Wyra¿enie \verb#value_type_t# to alias typu, który odnosi siê do zdeklarowanego lub wydedukowanego typu wartoœci \verb#R#. Definicje konceptów \verb#Sequence# i \verb#Range# potrzebne do tego algorytmu wygl¹daj¹ tak: \newline
+
+\begin{lstlisting}[frame=single]
+template<typename R>
+concept bool Range() {
+  return requires (R range) {
+    typename value_type_t<R>;
+    typename iterator_t<R>;
+    { begin(range) } -> iterator_t<R>;
+    { end(range) } -> iterator_t<R>;
+    requires Input_iterator<iterator_t<R>>();
+    requires Same_as<value_type_t<R>,
+      value_type_t<iterator_t<R>>>();
+  };
+}
+
+template<typename S>
+concept bool Sequence() {
+  return Range<R>() && requires (S seq) {
+    { seq.front() } -> const value_type<S>&;
+    { seq.back() } -> const value_type<S>&;
+  };
+}
+\end{lstlisting}
+
+Wiêkszoœæ sekwencji posiada operacje \verb#front()# i \verb#back()#, które zwracaj¹ pierwszy i ostatni element przedzia³u. To nie jest w pe³ni rozwiniêta specyfikacja sekwencji. Mo¿emy u¿yæ algorytmu do okreœlenia, czy element znajduje siê w dowolnej sekwencji. Niestety, algorytm nie dzia³a w przypadku niektórych kolekcji:
+
+\begin{lstlisting}[frame=single]
+std::set<int> testSet { ... };
+if (czyIstnieje(testSet, 42)) // (1)
+  ...
+\end{lstlisting}
+
+(1) - b³¹d: brak operacji \verb#front()# lub \verb#back()#\newline
+
+Potrzebny jest sposób, ¿eby jasno okreœliæ, czy klucz znajdujê siê w zbiorze.
+
+\subsection{Rozszerzanie algorytmów}
+
+Rozwi¹zaniem jest dodanie kolejnego przeci¹¿enia, które jako parametr przyjmuje kontener asocjacyjny\footnote{(ang. associative container) grupa szablonów klas w standardowej bibliotece \emph{C++}, która implementuje uporz¹dkowane tablice asocjacyjne. Kontenery zdefiniowane w obecnej wersji standardu: set, map, multiset, multimap, unordered set, unordered multiset, unordered map, unordered multimap.}.\newline
+\begin{lstlisting}[frame=single]
+template<Associative_container A,
+    Same_as<key_type_t<T>> T>
+bool czyIstnieje(const A &assoc, const T &value) {
+   return assoc.find(value) != assoc.end();
+}
+\end{lstlisting}
+
+Ta wersja funkcji \verb#czyIstnieje()# ma tylko dwa ograniczenia: \verb#A# musi byæ typu \verb#Associative_container#, a typ \verb#T# musi byæ taki sam jak typ klucza \verb#A# (\verb#key_type_t<A>#). W przypadku kontenerów asocjacyjnych po prostu wyszukujemy wartoœæ przy u¿yciu \verb#find()#, a nastêpnie sprawdzamy, czy znaleŸliœmy j¹ przez porównanie z \verb#end()#. To prawdopodobnie szybsze rozwi¹zanie ni¿ wyszukiwanie sekwencyjne. W przeciwieñstwie do wersji \verb#Sequence#, \verb#T# nie musi byæ typu \verb#Equality_comparable#. Wynika to z faktu, ¿e dok³adne wymagania \verb#T# s¹ okreœlone przez kontener asocjacyjny, a wymogi te s¹ zwykle okreœlane przez osobny komparator lub funkcjê haszuj¹c¹. \newline
+
+\noindent Koncept \verb#Associative_container#:
+
+\begin{lstlisting}[frame=single]
+template<typename S>
+concept bool Associative_container() {
+  return Regular<S> && Range<S>() && 
+    requires {
+      typename key_type_t<S>;
+      requires Object_type<key_type_t<S>>;
+    } &&
+    requires (S s, key_type_t<S> k) {
+      { s.empty() } -> bool;
+      { s.size() } -> int;
+      { s.find(k) } -> iterator_t<S>;
+      { s.count(k) } -> int;
+    };
+}
+\end{lstlisting}
+
+\noindent Kontener asocjacyjny jest typu \verb#Regular#, definiuje \verb#Range# elementów, ma \verb#key_type# (który mo¿e ró¿niæ siê od wartoœci \verb#value_type#), a tak¿e zestaw operacji, w tym \verb#find()#, itd.
+
+Podobnie jak poprzednio w przypadku \verb#Sequence#, nie jest to wyczerpuj¹ca lista wymagañ dla kontenera asocjacyjnego. Nie dotyczy wstawiania i usuwania, a tak¿e wyklucza szczególne wymagania dotycz¹ce iteratorów \verb#const#. Ponadto nie opisaliœmy dok³adnie tego, jak oczekujemy, ¿e zachowaj¹ siê funkcje \verb#size()#, \verb#empty()#, \verb#find()# i \verb#count()#.
+
+Ten koncept dotyczy wszystkich kontenerów asocjacyjnych z biblioteki standardowej \emph{C++} (\verb#set#, \verb#map#, \verb#unordered_multiset#, itp.). Obejmuje równie¿ te niestandardowe, zak³adaj¹c, ¿e nara¿aj¹ interfejs. Na przyk³ad przeci¹¿enie to bêdzie dzia³a³o dla wszystkich kontenerów asocjacyjnych typu \verb#Q#(\verb#QSet<T>#, \verb#QHash<T>#).
+
+Aby u¿ywaæ konceptów do rozwijania algorytmów, nale¿y zrozumieæ, jak kompilator wybiera pomiêdzy wersj¹ \verb#Sequence# a \verb#Associative_container#. Innymi s³owy, co siê dzieje gdy wywo³ywana jest funkcja \verb#czyIstnieje()#
+
+\begin{lstlisting}[frame=single]
+std::vector<int> v { ... };
+std::set<int> s { ... };
+
+if (czyIstnieje(v, 42)) // (1)
+   //...
+if (czyIstnieje(s, 42)) // (2)
+   //...
+\end{lstlisting}
+
+\noindent(1) - wywo³uje przeci¹¿enie \verb#Sequence#\newline
+(2) - wywo³uje przeci¹¿enie \verb#Associative_container#\newline
+
+\noindent Dla ka¿dego wywo³ania \verb#czyIstnieje# kompilator okreœla, która funkcja jest wywo³ywana na podstawie podanych argumentów. Nazywa siê to \emph{rozwi¹zaniem przeci¹¿enia}\footnote{(ang. overload resolution)}. Jest to algorytm, który próbuje znaleŸæ jedn¹ najlepsz¹ funkcjê (wœród jednego lub wiêcej kandydatów), aby j¹ wywo³aæ na podstawie podanych argumentów. Oba wywo³ania funkcji odnosz¹ siê do szablonów, wiêc kompilator wykonuje dedukcjê argumentów szablonu, a potem formuje specjalizacjê deklaracji w oparciu o wyniki. W obydwu przypadkach dedukcja i zast¹pienie powiod¹ siê w zwyk³y i przewidywalny sposób, dlatego w ka¿dym punkcie wywo³ania musimy wybraæ jedn¹ z dwóch specjalizacji. W tym miejscu ograniczenia wchodz¹ w grê. Tylko funkcje których ograniczenia s¹ spe³nione mog¹ byæ wybrane przez rozwi¹zanie przeci¹¿enia. Aby okreœliæ, czy ograniczenia funkcji s¹ spe³nione, zastêpujemy dedukowane argumenty szablonu powi¹zanymi ograniczeniami deklaracji szablonu funkcji, a nastêpnie oceniamy wynikowe wyra¿enie. Ograniczenia s¹ spe³nione, gdy substytucja siê powiedzie, a wyra¿enie oka¿e siê prawdziwe.
+
+W pierwszym wywo³aniu, dedukowane argumenty szablonu to \verb#vector<int># i \verb#int#. Argumenty te spe³niaj¹ ograniczenia \verb#Sequence#, ale nie tych \newline \verb#Asociative_container#, poniewa¿ \verb#vector# nie ma \verb#find()# lub \verb#count()#. Dlatego kandydat \verb#Asociative_container# zostaje odrzucony, pozostawiaj¹c tylko kandydata \verb#Sequence#. W drugim wywo³aniu, dedukowane argumenty to \verb#set<int># i \verb#int#. Rozwi¹zanie jest odwrotne do poprzedniego: \verb#set# nigdy nie jest \verb#Sequence#, poniewa¿ brakuje mu operacji \verb#front()# i \verb#back()#, tak wiêc kandydat jest odrzucany, a rozwi¹zanie przeci¹¿enia wybiera kandydata \verb#Asociative_container#. To dzia³a, poniewa¿ ograniczenia obu przeci¹¿eñ s¹ wystarczaj¹co wyczerpuj¹ce, aby zapewniæ, ¿e kontener spe³nia ograniczenia jednego szablonu lub drugiego, ale nie obu. Sytuacja jest nieco bardziej interesuj¹ca, jeœli chcemy dodaæ wiêcej przeci¹¿eñ tego algorytmu. Mo¿emy rozszerzyæ algorytm dla konkretnych typów lub szablonów, tak jak mogliœmy to zrobiæ bez konceptów. Zasadniczo mo¿emy okreœliæ prawid³owe definicje funkcji dla tych typów. Jeœli bêdziemy mieli szczêœcie, wiele z tych nowych prze³adowañ bêdzie mia³o identyczne definicje.
+
+Ogólnie rzecz bior¹c, mo¿emy kontynuowaæ rozszerzanie definicji algorytmu generycznego przez dodanie przeci¹¿eñ, które ró¿ni¹ siê tylko ich ograniczeniami. S¹ trzy przypadki, które trzeba wzi¹æ pod uwagê podczas prze³adowywania z konceptami:
+
+\begin{enumerate}
+\item Rozszerzaæ definicjê poprzez dostarczenie przeci¹¿enia, które dzia³a dla zupe³nie innego zestawu typów. Ograniczenia tych nowych prze³adowañ by³yby wzajemnie wykluczaj¹ce lub mia³yby minimaln¹ iloœæ nak³adania siê na istniej¹ce ograniczenia.
+
+\item Dostarczaæ zoptymalizowan¹ wersjê istniej¹cego przeci¹¿enia, specjalizuj¹c j¹ w podzbiorze swoich argumentów. Wymaga to utworzenia nowego przeci¹¿enia, które ma silniejsze ograniczenia ni¿ jego bardziej ogólna forma.
+
+\item Dostarczaæ uogólnion¹ wersjê, która jest zdefiniowana w kategoriach ograniczeñ wspó³u¿ytkowanych przez jedno lub wiêcej istniej¹cych prze³adowañ.
+
+\end{enumerate}
+
+Jeœli ograniczenia nie s¹ roz³¹czne z wieloma kandydatami, mog¹ byæ op³acalne. Kompilator musi okreœliæ najlepszego kandydata na wywo³anie. Jeœli jednak kompilator nie mo¿e okreœliæ najlepszego kandydata, rozwi¹zanie jest niejednoznaczne. Gdy w pierwszym algorytmie \verb#czyIstnieje()# zmieni siê wymaganie \verb#Sequence# zamiast tylko \verb#Range#. To zminimalizuje iloœæ nak³adania siê, a zatem i prawdopodobieñstwo dwuznacznoœci.
+
+Ograniczenia roz³¹czne nie gwarantuj¹, ¿e po³¹czenie bêdzie niedwuznaczne. Mo¿emy na przyk³ad spróbowaæ zdefiniowaæ kontener, który spe³nia wymagania zarówno \verb#Sequence# i \verb#Associative_container#. W tym przypadku oba przeci¹¿enia by³yby op³acalne, ale przeci¹¿enie nie jest z natury lepsze od innych. Chyba ¿e dodamy nowe przeci¹¿enia, aby dostosowaæ siê do tego rodzaju struktury danych, wynik by³by niejednoznacznym rozwi¹zaniem.
+
+\verb#Sequence# i \verb#Associative_container# tak naprawdê maj¹ pokrywaj¹ce siê ograniczenia. Oba wymagaj¹ konceptu \verb#Range#. Mo¿emy rozwa¿yæ te przeci¹¿enia jako przyk³ad trzeciego przypadku. To wskazuje, ¿e mo¿e istnieæ algorytm, który mo¿na zdefiniowaæ w odniesieniu do wymagañ przecinaj¹cych. Ale to nie jest takie proste.
+
+Drugi przypadek jest wa¿n¹ cech¹ programowania generycznego w jêzyku \emph{C++} i jest podstaw¹ optymalizacji typów w bibliotekach generycznych. Ograniczenie subsumpcji pozwala na optymalizacjê generycznych algorytmów opartych na interfejsach dostarczonych przez ich argumenty.
+
+\subsection{Specjalizacja algorytmów}
+
+W niektórych przypadkach mo¿emy definiowaæ struktury danych z rozszerzonym zestawem w³aœciwoœci lub operacji, które mog¹ byæ wykorzystane do definiowania bardziej dopuszczalnych lub bardziej wydajnych wersji algorytmu. Ten pomys³ jest realizowany przez hierarchiê iteratorów biblioteki standardowej.
+
+\emph{Iteratory forward} mog¹ byæ u¿yte do przechodzenia przez sekwencjê w jednym kierunku (do przodu) poprzez przesuwanie siê po jednym elemencie naraz, u¿ywaj¹c operatora \verb#++#.\newline
+
+\noindent Prosty koncept iteratora forward:\newline
+
+\begin{lstlisting}[frame=single]
+template<typename I>
+concept bool Forward_iterator() {
+  return Regular<I>() && requires (I i) {
+    typename value_type_t<I>;
+    { *i } -> const value_type_t<I>&;
+    { ++i } -> I&;
+  };
+}
+\end{lstlisting}
+
+Opieraj¹c siê na tym koncepcie, mo¿emy zdefiniowaæ dwa u¿yteczne algorytmy. Jeden, który przechodzi przez iterator wielokrotnymi krokami u¿ywaj¹c pêtli i drugi, który oblicza liczbê kroków miêdzy dwoma iteratorami.
+
+\begin{lstlisting}[frame=single]
+template<Forward_iterator I>
+void advance(I& iter, int n) {
+  //(1)
+  while (n != 0) { ++iter; --n; }
+}
+template<Forward_iterator I>
+int distance(I first, I limit) {
+  (2)
+  for (int n = 0; first != limit; ++first, ++n);
+  return n;
+}
+\end{lstlisting}
+
+(1) - warunek wstêpny: \verb#n >= 0# (2) - warunek wstêpny: \verb#limit# jest osi¹galny z \verb#first#
+
+Parametr \verb#n# funkcji \verb#advance# musi byæ nieujemny bo \emph{iteratory forward} nie mog¹ iœæ do ty³u. Ale \emph{iterator bidirectional} mo¿e byæ u¿yty do wêdrowania po sekwencji w oba kierunki (do przodu i do ty³u) poprzez przechodzenie po elementach naraz u¿ywaj¹c operatorów \verb#++# lub \verb#--#.
+
+\begin{lstlisting}[frame=single]
+template<typename I>
+  concept bool Bidirectional_iterator() {
+    return Forward_iterator<I>() && requires (I i)
+    {
+      { --i } -> I&;
+    };
+  }
+\end{lstlisting}
+
+Koncept \verb#Bidirectional_iterator# jest zbudowany na podstawie \newline \verb#Forward_iterator#. Czyli \emph{iterator bidirectional} jest \emph{iteratorem forward}, który równie¿ mo¿e poruszaæ siê do ty³u. Zestaw wymagañ konceptu \verb#Bidirecti-# \newline \verb#onal_iterator# ca³kowicie zalicza siê do zestawu konceptu \verb#Forward_iterator#. W wyniku czego, za ka¿dym razem gdy \verb#Bidirectional_iterator<X># jest prawdziwe (dla wszystkich \verb#X#), \verb#Forward_iterator<X># musi tez byæ prawdziwy. W tym przypadku mówimy, ¿e koncept \verb#Bidirectional_iterator# \emph{udoskonala}\footnote{(ang. refine)} koncept \verb#Forward_iterator#.
+
+To \emph{udoskonalenie} pozwala nam zdefiniowaæ now¹ wersjê \verb#advance()#, która mo¿e poruszaæ siê w oba kierunki.
+
+\begin{lstlisting}[frame=single]
+template<Bidirectional_iterator I>
+  void advance(I& iter, int n) {
+    if (n > 0)
+      while (n != 0) { ++iter; --n; }
+    else if (n < 0)
+      while (n != 0) { --iter; ++n; }
+  }
+\end{lstlisting}
+
+Koncept \verb#Bidirectional_iterator# pozwala nam uspokoiæ warunek wstêpny funkcji \verb#advance()#, dziêki czemu mo¿emy u¿yæ ujemnych wartoœci \verb#n#. Z drugiej strony \verb#Bidirectional_iterator# nie zawiera ¿adnych nowych informacji, które mog³yby pomóc nam ulepszyæ \verb#distance()#. Mo¿emy jednak zapewniæ optymalizacjê zarówno \verb#advance()# jak i \verb#distance()# dla \emph{iteratorów random access}. Te iteratory mog¹ byæ u¿yte do przebycia sekwencji w dwóch kierunkach, ale mog¹ posuwaæ siê do wielu elementów w jednym kroku u¿ywaj¹c operatorów + = lub - =. Mo¿emy równie¿ policzyæ odleg³oœæ miêdzy dwoma iteratorami, odejmuj¹c je.
+
+\begin{lstlisting}[frame=single]
+template<typename I>
+  concept bool Random_access_iterator() {
+    return Bidirectional_iterator<I>() && 
+      requires (I i, int n) {
+      { i += n } -> I&;
+      { i -= n } -> I&;
+      { i - i } -> int;
+    };
+  }
+\end{lstlisting}
+
+Koncept \verb#Random_access_iterator# udoskonala koncept \verb#Bidirectional-# \newline \verb#_iterator#. Dodaje trzy nowe wymagane operacje. Dziêki tym operacjom mo¿emy konstruowaæ zoptymalizowane wersje \verb#advance()# i \verb#distance()#, które nie wymagaj¹ pêtli.
+
+\begin{lstlisting}[frame=single]
+template<Random_access_iterator I>
+void advance(I& iter, int n) {
+   iter += n;
+}
+template<Random_access_iterator I>
+int distance(I first, I limit) {
+   return limit - first;
+}
+\end{lstlisting}
+
+Te algorytmy mo¿na u¿ywaæ do zdefiniowania du¿ej liczby u¿ytecznych operacji.
+
+\begin{lstlisting}[frame=single]
+template<Forward_iterator I, Ordered T>
+  requires Same_as<T, value_type_t<I>>()
+bool binary_search(I first, I limit, T const& value) {
+  if (first == limit)
+    return false;
+  auto mid = first;
+  advance(mid, distance(first, limit) / 2);
+  if (value < *mid)
+    return search(first, mid, value);
+  else if (*mid < value)
+    return search(++mid, limit, value);
+  else
+    return true;
+}
+
+\end{lstlisting}
+
+Algorytm jest definiowany dla iteratorów \emph{forward}, ale oczywiœcie mo¿e byæ u¿ywany równie¿ do \emph{bidirectional} i \emph{random access}. Wersje \verb#advance()# i \verb#distance()#, które s¹ u¿ywane, zale¿¹ od typu iteratora przekazanego do algorytmu. W przypadku \emph{iteratorów forward} i \emph{bidirectional}, algorytm jest liniowy w zakresie wielkoœci wejœciowych. W przypadku \emph{iteratorów random access} algorytm jest znacznie szybszy, poniewa¿ \verb#distance()# i \verb#advance()# nie wymagaj¹ dodatkowych przejazdów sekwencji wejœciowej.
+
+Zdolnoœæ do specjalizacji algorytmów wed³ug ograniczeñ i typów ma decyduj¹ce znaczenie dla wydajnoœci bibliotek generycznych jêzyka \emph{C++}. Koncepty znacznie u³atwiaj¹ definiowanie i wykorzystywanie tych specjalizacji. Ale jak kompilator wie, które przeci¹¿enie wybraæ?
+
+W poprzednich przyk³adach wykorzystuj¹cych sekwencje i kontenery asocjacyjne, tylko jedno przeci¹¿enie funkcji \verb#czyIstnieje()# by³o zawsze op³acalne, poniewa¿ argumenty by³y jednego lub drugiego, ale nie obu. Jeœli jednak wywo³amy \verb#binarny_search()# z \emph{iteratorami random access}, powiedzmy, ¿e s¹ to wskaŸniki do tablicy, wszystkie trzy przeci¹¿enia \verb#advance()# i oba przeci¹¿enia \verb#distance()# bêd¹ op³acalne. To ma sens. Ka¿da implementacja tych funkcji jest doskonale zdefiniowana dla wskaŸników.
+
+W takim przypadku kompilator musi wybraæ najlepszego spoœród potencjalnych kandydatów. Ogólnie rzecz ujmuj¹c, \emph{C++} uwa¿a, ¿e jedna z funkcji jest lepsza od innej za pomoc¹ nastêpuj¹cych regu³:
+
+\begin{enumerate}
+\item Funkcje wymagaj¹ce mniejszych lub "tañszych" konwersji argumentów s¹ lepsze ni¿ te wymagaj¹ce wiêkszych lub bardziej kosztownych konwersji.
+
+\item Funkcje nieszablonowe s¹ lepsze ni¿ specjalizacje szablonów funkcji.
+
+\item Jedna specjalizacja szablonu funkcji jest lepsza od innej, jej typy parametrów s¹ bardziej wyspecjalizowane. Na przyk³ad \verb#T*# jest bardziej wyspecjalizowany ni¿ \verb#T#, i tak samo \verb#vector<T>#, ale \verb#T*# nie jest bardziej wyspecjalizowany ni¿ \verb#vector<T>#, ani te¿ nie jest przeciwnie.
+
+\textbf{Specyfikacja techniczna konceptów dodaje jeszcze jedn¹ zasadê:}
+
+\item Jeœli dwie funkcje nie mog¹ byæ sortowane, poniewa¿ maj¹ równowa¿ne konwersje lub s¹ specjalizacjami szablonów funkcji o równowa¿nych typach parametrów, tym lepsza jest bardziej ograniczona. S¹ to najmniej ograniczone funkcje nie ograniczone. 
+
+\end{enumerate}
+
+Innymi s³owy, ograniczenia dzia³aj¹ jako ³¹cznik dla zwyk³ych regu³ przeci¹¿ania w \emph{C++}. Kolejnoœæ ograniczeñ (bardziej ograniczona) zale¿y zasadniczo od porównania zestawów wymagañ dla ka¿dego szablonu w celu okreœlenia, czy jest to œcis³y nadzbiór drugiego. W celu porównania ograniczeñ, kompilator najpierw analizuje powi¹zane ograniczenia funkcji w celu zbudowania zestawu tak zwanych ograniczeñ atomowych. S¹ \emph{atomowe}, poniewa¿ nie mog¹ byæ podzielone na mniejsze czêœci. Ograniczenia atomowe zawieraj¹ wyra¿enia sta³e \emph{C++} (np. \emph{type traits}) i wymagania w wyra¿eniu \verb#requires#.
+
+Na przyk³ad, w rozwi¹zaniu \verb#advance()#, gdy jest wywo³any z \emph{iteratorem random access}, zestaw ograniczeñ dla ka¿dego przeci¹¿enia to:
+
+\noindent \begin{tabular}{|p{5cm}|p{7cm}|p{1cm}|} \hline
+  \hline 
+  Koncept & Atomowe wymagania \\
+  \hline 
+  \verb#Forward_iterator# & \verb#value_type_t<I># \verb#{ *i } -> value_type_t<I> const&# \verb#{ ++i } -> I&# \\
+  \hline
+  \verb#Bidirectional_iterator# & \verb#value_type_t<I># \verb#{ *i } -> value_type_t<I> const&# \verb#{ ++i } -> I&# \newline \verb#{ --i } -> I&# \\
+  \hline
+  \verb#Random_access_iterator# & \verb#value_type_t<I># \verb#{ *i } -> value_type_t<I> const&# \verb#{ ++i } -> I&# \newline \verb#{ --i } -> I&# \newline \verb#{ i += n } -> I&# \newline \verb#{ i -= n } -> I&# \newline \verb#{ i - j } -> int# \\
+  \hline
+  
+\end{tabular} \newline
+
+Dla zwiêz³oœci wy³¹czy³em ograniczenie \verb#Regular<I># pojawiaj¹ce siê w \verb#Forward_iterator#, poniewa¿ on(i jego wymagania) s¹ wspólne dla wszystkich konceptów iteruj¹cych. Porównuj¹c powy¿sze stwierdzimy, ¿e \verb#Bidirec-# \newline \verb#tional_iterator# ma œcis³y nadzbiór wymagañ \verb#Forward_iterator#, a \verb#Rand-# \newline \verb#om_access_iterator# ma œcis³y nadzbiór wymagañ \verb#Bidirectional_iterator#. Z tego wzglêdu \verb#Random_access_iterator# jest najbardziej ograniczony i to przeci¹¿enie zosta³o wybrane. Nowa regu³a przeci¹¿ania nie gwarantuje, ¿e rozwi¹zanie przeci¹¿enia odniesie sukces. W szczególnoœci, jeœli dwóch realnych kandydatów ma nak³adaj¹ce siê lub logicznie równowa¿ne ograniczenia, rozwi¹zanie bêdzie niejednoznaczna. Jest kilka powodów, dla których to mia³oby siê zdarzyæ.
+
+\subsection{Semantyczne udoskonalanie}
+
+W niektórych przypadkach udoskonalenia s¹ czysto semantyczne. Nie dostarczaj¹ operacji, które kompilator mo¿e wykorzystaæ do odró¿nienia przeci¹¿eñ. W rzeczywistoœci ten problem pojawia siê w standardowej hierarchii iteratorów: \emph{iteratory input} i \emph{iteratory forward} dziel¹ dok³adnie te same zestawy operacji.
+
+Pojêciowo \emph{iterator input} jest iteratorem reprezentuj¹cym pozycjê w strumieniu wejœciowym. Poniewa¿ jest zwiêkszany, poprzednie elementy s¹ konsumowane. Oznacza to, ¿e wczeœniej dostêpne elementy nie s¹ ju¿ dostêpne przez iterator lub dowoln¹ jego kopiê. W przeciwieñstwie do tego, \emph{iterator forward} nie konsumuje elementów przy zwiêkszaniu. Wczeœniej dostêpne elementy mog¹ byæ uzyskane dziêki kopiom. Jest to zazwyczaj okreœlane mianem w³aœciwoœci \emph{multipass}. Jest to czysto semantyczna w³asnoœæ.
+
+\begin{lstlisting}[frame=single]
+template<typename I>
+concept bool Input_iterator() {
+  return Regular<I>() && requires (I i) {
+    typename value_type_t<I>;
+    { *i } -> value_type_t<I> const&;
+    { ++i } -> I&;
+  };
+}
+
+template<typename I>
+concept bool Forward_iterator() {
+  return Input_iterator<I>();
+}
+\end{lstlisting}
+
+Wszystkie wymagania sk³adniowe s¹ zdefiniowane w koncepcie \verb#Input_i-# \newline \verb#terator#. Koncept \verb#Forward_iterator# zawiera tylko \verb#Input_iterators#. Innymi s³owy, zestaw wymagañ \verb#Forward_iterator# jest dok³adnie taki sam, jak \verb#Input_iterator#. Jeœli próbujemy zdefiniowaæ przeci¹¿enia wymagaj¹ce tych konceptów, wynik by³by zawsze dwuznaczny (ani lepszy od drugiego). Zró¿nicowanie pomiêdzy tymi konceptami jest tak naprawdê przydatny. Na przyk³ad jeden z konstruktorów \verb#vector# ma bardziej wydajn¹ implementacjê \emph{iteratorów forward} ni¿ dla \emph{iteratorów input}.
+
+\begin{lstlisting}[frame=single]
+template<Object_type T, Allocator_of<T> A>
+class vector {
+  template<Input_iterator I>
+    requires Same_as<T, value_type_t<I>>()
+  vector(I first, I limit) {
+    for ( ; first != limit; ++first)
+      push_back(*first);
+  }
+
+  template<Forward_iterator I>
+    requires Same_as<T, value_type_t<I>>()
+  vector::vector(I first, I limit) {
+    reserve(distance(first, limit)); 
+      // 1 allocation
+    insert(begin(), first, limit);
+  }
+  // ...
+\end{lstlisting}
+
+To nie zadzia³a, jeœli kompilator nie mo¿e odró¿niæ \verb#Forward_iterator# z \verb#Input_iterator#. 
+
+Mo¿na to naprawiæ dodaj¹c nowe wymagania sk³adniowe do \verb#Forward_iterator#, które odnosz¹ siê do jego rangi w hierarchii iteratorów. To tradycyjnie zosta³o zrobione przy u¿yciu \emph{tag dispatch}. £¹czenie \emph{etykiety klasy}\footnote{(ang. tag class) Pusta klasa w hierarchii dziedziczenia} z typem iteratora w celu wybrania odpowiedniego przeci¹¿enia. Ten skojarzony typ to \verb#iterator_category#. Zmieniony \verb#Forward_iterator# mo¿e wygl¹daæ tak:
+
+\begin{lstlisting}[frame=single]
+template<typename I>
+  concept bool Forward_iterator() {
+    return Input_iterator<I>() && requires {
+      typename iterator_category_t<I>;
+      requires Derived_from<I,
+        forward_iterator_tag>();
+    };
+  }
+\end{lstlisting}
+
+Dziêki tej definicji wymagania \verb#Forward_iterator# zaliczaj¹ wymagania \verb#Input_iterator#, a kompilator mo¿e rozró¿niæ powy¿sze przeci¹¿enia. Jako dodatkowa zaleta, u¿ywanie \emph{iteratorów random access} bêdzie jeszcze bardziej wydajne bo \verb#distance()# wymaga tylko jednej operacji ca³kowitej.
+
+Jako inny przyk³ad, \emph{C++17} dodaje now¹ kategoriê iteratorów: \emph{iteratory contiguous}. \emph{Iterator contiguous} jest \emph{iteratorem random access}, którego obiekty odwo³awcze s¹ przydzielane w s¹siednich obszarach pamiêci, których adresy rosn¹ wraz z ka¿dym przyrostem iteratora. Powoduje to otwarcie drzwi na wiele optymalizacji pamiêci na ni¿szym poziomie. Jest to oczywiœcie zupe³nie czysta semantyka. Jeœli chcemy zdefiniowaæ nowy koncept, musimy j¹ odró¿niæ od \verb#Random_access_iterator#. Na szczêœcie w³aœnie zdefiniowaliœmy maszynê, aby to zrobiæ.
+
+\begin{lstlisting}[frame=single]
+template<typename I>
+concept bool Contiguous_iterator() {
+  return Random_access_iterator<I>() && requires {
+    requires Derived_from<I,
+    contiguous_iterator_tag>();
+  };
+}
+\end{lstlisting}
+	\newpage
+	
+
+\section{Implementacja algorytmu Fleury'ego jako przyk³ad wykorzystuj¹cy koncepty}
+
+\subsection{Omówienie problemu}
+\emph{Algorytm Fleury'ego} to algorytm pozwalaj¹cy na znalezienie \emph{cyklu Eulera} w \emph{grafie eulerowskim.}
+
+\newtheorem{mydef}{Definicja}
+
+\begin{mydef}
+\textbf{Graf} - struktura s³u¿¹ca do przedstawiania i badania relacji miêdzy obiektami. Jest to zbiór wierzcho³ków, które mog¹ byæ po³¹czone krawêdziami, gdzie krawêdŸ zaczyna siê i koñczy w którymœ z wierzcho³ków.
+\end{mydef}
+
+\begin{mydef}
+\textbf{Multigraf} - graf, w którym mog¹ wystêpowaæ krawêdzie wielokrotne(powtarzaj¹ce siê) oraz pêtle (krawêdzie, których koñcami jest ten sam wierzcho³ek).
+\end{mydef}
+
+\begin{mydef}
+\textbf{Graf spójny} - graf spe³niaj¹cy warunek, ¿e dla ka¿dej pary wierzcho³ków istnieje œcie¿ka, która je ³¹czy.
+\end{mydef}
+
+\begin{mydef}
+\textbf{Œcie¿ka} - ci¹g wierzcho³ków, po³¹czonych krawêdziami.
+\end{mydef}
+
+\begin{mydef}
+\textbf{Droga} - œcie¿ka, w której wierzcho³ki s¹ ró¿ne.
+\end{mydef}
+
+\begin{mydef}
+\textbf{Cykl} - droga zamkniêta czyli œcie¿ka, w której pierwszy i ostatni wierzcho³ek s¹ równe.
+\end{mydef}
+
+\begin{mydef}
+\textbf{Graf eulerowski} - spójny multigraf posiadaj¹cy cykl, który zawiera wszystkie krawêdzie. 
+\end{mydef}
+
+\begin{mydef}
+\textbf{Warunek istnienia cyklu Eulera w spójnym multigrafie} - stopieñ ka¿dego wierzcho³ka musi byæ liczb¹ parzyst¹.
+\end{mydef}
+
+\begin{algorithm}[H]
+ \KwData{G = (V,E), G - spójny multigraf, V - zbiór wierzcho³ków, E - zbiór krawêdzi}\label{Wejœcie}
+ \KwResult{zbiór wierzcho³ków reprezentuj¹cych cykl Eulera}
+ Zaczynamy od dowolnego wierzcho³ka ze zbioru V\;
+ \While{Dopóki zbiór krawêdzi nie jest pusty}{
+  \eIf{Je¿eli z bie¿¹cego wierzcho³ka x odchodzi tylko jedna krawêdŸ}{
+   to przechodzimy wzd³u¿ tej krawêdzi do nastêpnego wierzcho³ka i usuwamy tê krawêdŸ wraz z wierzcho³kiem x\;
+   }{
+  wybieramy tê krawêdŸ, której usuniêcie nie rozspójnia grafu i przechodzimy wzd³u¿ tej krawêdzi do nastêpnego wierzcho³ka, a nastêpnie usuwamy tê krawêdŸ z grafu\;
+  }
+ }
+ \caption{Algorytm Fleury'ego}
+\end{algorithm}
+
+\subsection{Dzia³anie programu}
+Za³o¿eniem programu jest symulacja algorytmu Fleury'ego dla jak najwiêkszej iloœci kontenerów biblioteki STL. Dziêki przeci¹¿aniu funkcji jakie oferuj¹ koncepty, w prosty i czytelny sposób, uda³o siê napisaæ generyczny algorytm.
+
+W programie s¹ dwa kontenery do przechowywania krawêdzi i wierzcho³ków. KrawêdŸ reprezentowana jest przez klasê \verb#Edge#, która przyjmuje dwie wartoœci typu \verb#int# do konstruktora. Wierzcho³ek, z kolei reprezentowany jest przez zmienn¹ \verb#int#. 
+
+Dane (pary wierzcho³ków) s¹ wczytywane z pliku, a potem w zale¿noœci od rodzaju kontenera i iteratora, sortowane. Dla kontenerów: 
+\begin{itemize}
+\item sekwencyjnych z iteratorem \verb#Random access# (\verb#vector#) wywo³ywana jest funkcja szablonu ograniczonego przez koncepty: \verb#Sequence# i \newline \verb#Random_access_iterator#.
+
+\begin{lstlisting}[frame=single]
+template<Sequence S, Random_access_iterator R>
+void sortVertices(S &seq){
+    sort(seq.begin(), seq.end());
+}
+\end{lstlisting}
+
+\item sekwencyjnych z iteratorem \verb#Bidirectional# (\verb#list#) lub sekwencyjnych \emph{forward}(\verb#forward_list#) z iteratorem \verb#Forward# wywo³ywana jest funkcja szablonu ograniczonego przez koncepty: \verb#Sequence# i \verb#Bidirectiona-# \newline \verb#l_iterator# lub \verb#SequenceForward# i \verb#Forward_iterator#
+
+\begin{lstlisting}[frame=single]
+template<typename S, typename R>
+requires (Sequence<S>() && 
+Bidirectional_iterator<R>()) || 
+(SequenceForward<S>() && Forward_iterator<R>())
+void sortVertices(S &seq){
+    seq.sort();
+}
+\end{lstlisting}
+
+\item asocjacyjnych (\verb#set#) wywo³ywana jest funkcja szablonu ograniczonego przez koncept: \verb#Associative_container#.
+
+\begin{lstlisting}[frame=single]
+template<Associative_container A>
+void sortVertices(A &seq){}
+\end{lstlisting}
+
+\end{itemize}
+\newpage
+\noindent Omawiany algorytm wykonuje funkcja \verb#determineEulerCycle#:
+\begin{lstlisting}[frame=single]
+template<typename E, typename V>
+void determineEulerCycle(E &edges, V &vertices){
+   int v = 0;
+   bool condition = (checkIfGraphConnected(edges, 
+   vertices, 0, v) && checkIfAllEdgesEvenDegree
+   (edges, vertices));
+    
+   if(condition){
+      cout << "Euler cycle:" << endl << endl << v;
+      while(!edges.empty()){
+         switch(getNeighboursCount(edges, v)){
+            case 1 : {
+               removeEdgeWithOneNeighbour(edges, v);
+               break;
+            }
+            default: {
+               removeEdgeWithMoreNeighbour(edges,
+               v, vertices);
+               break;
+            }
+         }
+         cout <<" -> "<<v;
+      }
+      cout << endl << endl;
+    } else {
+       cout<<"Invalid graph."<<endl;
+       if(!checkIfGraphConnected(edges, vertices,
+       0, v))
+          cout <<"Graph is not connected"<<endl;
+       else if(!checkIfAllEdgesEvenDegree(edges,
+       vertices))
+          cout <<"Not all the edges are even"<<endl;
+    }
+}
+\end{lstlisting}
+
+¯eby algorytm siê wykona³, musz¹ zostaæ spe³nione dwa warunki: graf musi byæ spójny (za to odpowiedzialna jest funkcja \verb#checkIfGraphConnected#) i wszystkie krawêdzie musz¹ byæ parzystego stopnia (\verb#checkIfAllEdgesEvenDegree#).
+
+\verb#checkIfGraphConnected()#
+\begin{lstlisting}[frame=single]
+template<typename E, typename V>
+bool checkIfGraphConnected(E &ed, V &vertices,
+int x, int startVertice) {
+    
+   bool *visited = new bool[vertices.size()];
+   for (int i = 0; i < vertices.size(); i++) 
+      visited[i] = false;
+
+   stack<int>stack;
+   int vc = 0;
+    
+   stack.push(startVertice);
+   visited[startVertice] = true;
+    
+   while (!stack.empty()) {
+       int v = stack.top();
+       stack.pop();
+       vc++;
+    
+       for(typename E::iterator it = ed.begin();
+          it != ed.end(); it++){
+          if(it->getA() == v && !visited[it->getB()]){
+             visited[it->getB()] = true;
+             stack.push(it->getB());
+          } else if(it->getB() == v &&
+          !visited[it->getA()]){
+             visited[it->getA()] = true;
+             stack.push(it->getA());
+          }
+        }
+    }
+
+    delete [] visited;
+
+    return (vc == vertices.size()-x);
+
+}
+\end{lstlisting}
+
+Algorytm przechodzi przez graf, po kolei wrzuca odwiedzane wierzcho³ki na stos, zaznacza je w tablicy odwiedzonych (\verb#visited#) i zaraz zdejmuje z tego stosu, zwiêkszaj¹c licznik \verb#vc#. Robi to dopóki stos nie jest pusty. Zwraca warunek porównuj¹cy licznik \verb#vc# z rozmiarem kontenera wierzcho³ków (wszystkie wierzcho³ki zosta³y odwiedzone, czyli istniej¹ œcie¿ki miêdzy wierzcho³kami, graf jest spójny).
+
+\verb#checkIfAllEdgesEvenDegree#:
+\begin{lstlisting}[frame=single]
+template<typename E, typename V>
+bool checkIfAllEdgesEvenDegree(E &edges, V &vertices){
+    int counter = 0, i = 0;
+    for(auto v : vertices){
+        for(auto e : edges){
+            if(e.getA() == v || e.getB() == v)
+               counter++;
+        }
+        if(counter % 2 == 0) i++;
+    }
+    return (i == vertices.size()) ? true : false;
+}
+\end{lstlisting}
+
+Zmienna \verb#i#  zwiêksza siê jeœli iloœæ wyst¹pieñ wierzcho³ka jest liczb¹ parzyst¹. Zwraca wartoœæ \verb#true# jeœli zmienna \verb#i# jest równa liczbie elementów kontenera zawieraj¹cego wierzcho³ki (dla ka¿dego wierzcho³ka zmienna \verb#i# zwiêksza³a siê o 1).
+
+Jeœli warunek nie zostanie spe³niony, u¿ytkownik zostaje poinformowany o tym, ¿e graf jest niepoprawny. W odwrotnej sytuacji, w pêtli (dopóki kontener krawêdzi nie jest pusty), wykonywana jest jedna dwóch operacji. Gdy wierzcho³ek ma jednego s¹siada, wywo³uje siê funkcja \verb#removeEdgeWithOneN-#\newline \verb#eighbour()#, a gdy wiêcej wierzcho³ków, funkcja \verb#removeEdgeWithMoreNei-# \newline \verb#ghbour()#. Pierwsza z nich ma dwa przeci¹¿enia konceptowe:
+\begin{itemize}
+
+\item Dla kontenera sekwencyjnego lub kontenera sekwencyjnego \emph{forward}
+\begin{lstlisting}[frame=single]
+template<typename S> requires Sequence<S>()
+|| SequenceForward<S>()
+void removeEdgeWithOneNeighbour(S &edges, int &v){
+    
+    typename S::iterator it = 
+    findElement<S>(edges, v);
+    
+    if(it->getA() == v) v = it->getB();
+    else v = it->getA();
+
+    deleteElementFromContainer(edges, it);
+}
+\end{lstlisting}
+
+\item Dla kontenera asocjacyjnego:
+\begin{lstlisting}[frame=single]
+template<Associative_container A>
+void removeEdgeWithOneNeighbour(A &edges, int &v){
+    
+    typename A::iterator it2;
+    for(typename A::iterator it = edges.begin();
+    it != edges.end(); it++){
+        if(it->getA() == v || it->getB() == v){
+            it2 = it;
+            if(it->getA() == v) v = it->getB();
+            else v = it->getA();
+            it = prev(edges.end());
+        }
+    }
+
+    edges.erase(it2);
+}
+\end{lstlisting}
+
+Funkcja znajduje krawêdŸ, dostaj¹c wierzcho³ek wychodz¹cy. I wierzcho³ek znalezionej krawêdzi przypisuje do tego przekazanego.
+
+\end{itemize}
+
+Druga \verb#removeEdgeWithMoreNeighbour()# wygl¹da:
+\begin{lstlisting}[frame=single]
+template<typename E, typename V>
+void removeEdgeWithMoreNeighbour(E &edges, int &v, 
+V &vertices){
+    
+    bool w = true;
+    
+    for(typename E::iterator i = edges.begin(); 
+    i != edges.end() && w; i++){
+        if(i->getA() == v && checkIfStillConnected
+        (edges, *i, getZeroDegreeCount(edges, 
+        vertices), v, vertices)){
+            v = i->getB();
+            deleteElementFromContainer(edges, i);
+            w = false;
+        } else if(i->getB() == v && 
+        checkIfStillConnected(edges, 
+        *i, getZeroDegreeCount(edges, vertices), v, 
+        vertices)){
+            v = i->getA();
+            deleteElementFromContainer(edges, i);
+            w = false;
+        }
+    }
+}
+\end{lstlisting}
+\newpage
+Jeœli wierzcho³ek ma wiêcej s¹siadów, wybiera tego który nie rozspójni grafu. ¯eby to sprawdziæ u¿ywa funkcji \verb#checkIfStillConnected#:
+\begin{lstlisting}[frame=single]
+template<typename E, typename V>
+bool checkIfStillConnected(E &edges, Edge e, int x, 
+int startVertice, V &vertices){
+    
+    E tmp;
+
+    for(auto e : edges)
+        addElementToContainer(tmp, e);
+
+    bool w = true;
+    for(typename E::iterator it = tmp.begin(); 
+    it != tmp.end() && w; it++)
+		if (it->getA() == e.getA() && 
+		it->getB() == e.getB()) {
+            deleteElementFromContainer(tmp, it);
+            w = false;
+        }
+        
+    return checkIfGraphConnected(tmp, vertices, 
+    x, startVertice);
+}
+\end{lstlisting}
+
+W celu sprawdzenia, czy graf po usuniêciu jakiejœ krawêdzi dalej bêdzie spójny, potrzebny jest pomocniczy kontener. Zapisujemy do niego aktualne krawêdzie, wyszukujemy w nim przekazan¹ krawêdŸ i przekazujemy go do istniej¹cej ju¿ funkcji \verb#checkIfGraphConnected()#.\newline
+
+\noindent Dodatkowe funkcje:
+
+\noindent \verb#addElementToContainer#:\newline
+
+\noindent Dla kontenera sekwencyjnego, ograniczona przez koncept \verb#Sequence#:
+
+\begin{lstlisting}[frame=single]
+template<Sequence S, typename Element>
+void addElementToContainer(S &seq, Element e){
+    seq.push_back(e);
+}
+\end{lstlisting}
+
+\noindent Dla kontenera sekwencyjnego \emph{forward}, ograniczona przez koncept \verb#SequenceForward#:
+
+\begin{lstlisting}[frame=single]
+template<SequenceForward S, typename Element>
+void addElementToContainer(S &seq, Element e){
+    seq.push_front(e);
+}
+\end{lstlisting}
+
+\noindent Dla kontenera asocjacyjnego, ograniczona przez koncept \verb#Associative_container#:
+
+\begin{lstlisting}[frame=single]
+template<Associative_container S, typename Element>
+void addElementToContainer(S &seq, Element e){
+    seq.insert(e);
+}
+\end{lstlisting}
+
+\noindent Funkcja dodaje element do kontenera.\newline
+
+\noindent \verb#findElement#:\newline \newline
+\noindent Dla kontenera sekwencyjnego lub sekwencyjnego \emph{forward}, ograniczona przez koncept \verb#Sequence# lub \verb#SequenceForward#
+\begin{lstlisting}[frame=single]
+template<typename S>
+requires Sequence<S>() || SequenceForward<S>()
+typename S::iterator findElement(S &seq, int e){
+    return find(seq.begin(), seq.end(), e);
+}
+\end{lstlisting}
+
+\noindent Funkcja zwraca znaleziony element w kontenerze \newline
+
+\noindent \verb#getVerticesSize#:
+\begin{lstlisting}[frame=single]
+template<typename S>
+int getVerticesSize(typename S::iterator begin, 
+typename S::iterator end){
+    return distance(begin, end);
+}
+\end{lstlisting}
+
+\noindent Funkcja zwraca rozmiar kontenera.\newline
+
+\noindent \verb#deleteElementFromContainer#:\newline
+
+\noindent Dla kontenera sekwencyjnego, ograniczona przez koncept \verb#Sequence#:
+\begin{lstlisting}[frame=single]
+template<Sequence S>
+void deleteElementFromContainer(S &seq, 
+typename S::iterator it){
+    seq.erase(it);
+}
+\end{lstlisting}
+
+\noindent Dla kontenera sekwencyjnego \emph{forward}, ograniczona przez koncept \verb#SequenceForward#:
+\begin{lstlisting}[frame=single]
+template<SequenceForward S>
+void deleteElementFromContainer(S &seq, 
+typename S::iterator it){
+    seq.remove(*it);
+}
+\end{lstlisting}
+
+\noindent Dla kontenera asocjacyjnego, ograniczona przez koncept \verb#Associative_container#:
+\begin{lstlisting}[frame=single]
+template<Associative_container S>
+void deleteElementFromContainer(S &seq, 
+typename S::iterator it){
+    seq.erase(it);
+}
+\end{lstlisting}
+
+\noindent Funkcja usuwa element z kontenera.
+	
+	\newpage
+	
+	
+\section{W³¹czenie konceptów do standardu C++}
+
+Koncepty nie zosta³y w³¹czone do standardu \emph{C++17}. Krótkie uzasadnienie jest takie, ¿e komisja nie osi¹gnê³a porozumienia, ¿e koncepty (okreœlone w specyfikacji technicznej) osi¹gnê³y wystarczaj¹ce doœwiadczenie w zakresie wdro¿enia i u¿ytkowania, aby byæ wystarczaj¹ce do dopuszczenia w obecnym projekcie. Zasadniczo komisja nie powiedzia³a "nie", ale "jeszcze nie".
+
+Najwiêksze zastrze¿enia nie wynika³y z problemów technicznych. Powsta³y nastêpuj¹ce obawy:
+
+\begin{itemize}
+
+\item specyfikacja konceptów istnia³a w opublikowanej formie przez mniej ni¿ cztery miesi¹ce
+\item jedyna znana i dostêpna publicznie implementacja konceptów znajduje siê w nieopublikowanej wersji \emph{kompilatora GCC}
+\item implementacja \emph{kompilatora GCC} zosta³a opracowana przez tê sam¹ osobê, która napisa³a specyfikacjê. W zwi¹zku z tym implementacja jest dostêpna do testowania, ale nie podjêto ¿adnej próby wprowadzenia w ¿ycia specyfikacji. A zatem specyfikacja nie jest przetestowana. Kilku cz³onków komisji wskaza³o, ¿e posiadanie implementacji wyprodukowanej ze specyfikacji ma decyduj¹ce znaczenie dla okreœlenia kwestii specyfikacji.
+\item najbardziej znacz¹ce i znane u¿ycie konceptów jest dostêpne w specyfikacji \emph{Ranges TS}. Jest kilka innych projektów eksperymentuj¹cych z konceptami, ale ¿aden z nich nie zbli¿a siê do skali, której mo¿na oczekiwaæ gdy programiœci zaczn¹ korzystaæ z tej funkcjonalnoœci. Wydajnoœæ i problemy zwi¹zane z obs³ug¹ b³êdów przy u¿yciu bie¿¹cej implementacji GCC dowodz¹, ¿e nie wykonano wiêkszej próby u¿ywania konceptów.
+\item specyfikacja konceptów nie dostarcza ¿adnych definicji. Niektórzy cz³onkowie komisji kwestionuj¹ u¿ytecznoœæ konceptów bez dostêpnoœci biblioteki definicji konceptów, takiej jak \emph{Ranges TS}. Przyjêcie specyfikacji konceptów do \emph{C++17} bez odpowiedniej biblioteki definicji niesie ryzyko zablokowania jêzyka bez udowodnienia, ¿e zawiera funkcje potrzebne do wdro¿enia biblioteki, które mog³yby byæ zaprojektowane do konceptualizacji biblioteki standardowej.
+
+\end{itemize}
+
+Obawy techniczne:
+\begin{itemize}
+
+\item koncepty zawieraj¹ now¹ sk³adniê do definiowania szablonów funkcji. Skrócona deklaracja szablonu funkcji wygl¹da podobnie to nieszablonowej deklaracji funkcji z wyj¹tkiem tego, ¿e co najmniej jeden z jej  parametrów zostanie zadeklarowany ze specyfikatorem typu zastêpczego \verb#auto# albo nazw¹ konceptu. Obawa wynika z tego, ¿e taka deklaracja:\newline
+\noindent \verb#void f(X x){}# \newline
+definiuje nieszablonow¹ funkcjê jeœli \verb#X# jest typem, ale definiuje szablon funkcji jeœli \verb#X# jest konceptem. To ma subtelne konsekwencje dla tego czy funkcja mo¿e byæ zdefiniowana w pliku nag³ówkowym, czy s³owo kluczowe \verb#typename# jest potrzebne by odnieœæ siê do sk³adowych typów typu \verb#X#, czy istnieje dok³adnie jedna zmienna lub brak lub kilka dla ka¿dej deklarowanej zmiennej lokalnej, statycznej. itd.
+
+
+\item specyfikacja konceptów zawiera równie¿ sk³adniê szablonów wstêpnych, która pozwala omin¹æ rozwlek³¹ sk³adniê deklaracji szablonu, do której wszyscy s¹ przyzwyczajeni jednoczeœnie okreœlaj¹c ograniczenia typu. Nastêpuj¹cy przyk³ad deklaruje szablon funkcji \verb#f#, przyjmuj¹cy dwa parametry \verb#A# i \verb#B#, które spe³niaj¹ wymagania konceptu \verb#C#: \newline
+\verb#C{ A, B } void f(A a, B b);#\newline
+Ta sk³adnia nie jest lubiana. Wspomniano, ¿e biblioteka \emph{Ranges TS} jej u¿ywa³a w pewnych miejscach a grupa pracuj¹ca nad ewolucj¹ biblioteki za¿¹da³a ¿eby j¹ zmieniæ i ju¿ nigdy nie u¿ywaæ.
+\item S¹ dwie formy definiowania konceptów: funkcja i zmienna. Forma funkcji istnieje po to by wspieraæ przeci¹¿anie definicji konceptów oparte na parametrach szablonu. Forma zmiennej istnieje by wspieraæ nieco krótsze definicje:
+
+\begin{lstlisting}[frame=single]
+//forma funkcji
+template<typename T>
+concept bool C(){
+   return ...;
+}
+
+//forma zmiennej
+template<typename T>
+concept bool C = ...;
+\end{lstlisting}
+
+Wszystkie koncepty, które mo¿na zdefiniowaæ przy u¿yciu formy zmiennej mo¿na zdefiniowaæ za pomoc¹ formy funkcji. Stosowana forma wp³ywa na sk³adniê wymagan¹ do oszacowania konceptu, a zatem u¿ycie konceptu wymaga znajomoœci formy u¿ytej do jego zdefiniowania. Wczesna wersja \emph{Ranges TS} u¿ywa³a zarówno formy zmiennej, jak i funkcji do definiowania konceptów i niespójnoœæ spowodowa³a wiele b³êdów w specyfikacji. Aktualna \emph{Ranges TS} wykorzystuje tylko formê funkcji do zdefiniowania okreœlonych konceptów. Niektórzy cz³onkowie komitetu uwa¿aj¹, ¿e jedna forma definicji uproœci jêzyk i uniknie trudnoœci w u¿ywaniu i nauczaniu. Zapewnienie odrêbnej sk³adni definicji konceptów, a nie okreœlenie ich w kategoriach funkcji lub zmiennych uniknê³oby równie¿ dziwnej sk³adni \verb#concept bool#.
+
+\item zosta³a dodana mo¿liwoœæ u¿ywania \verb#auto# jako specyfikatora dla parametrów szablonu bez typu: \newline\newline
+\verb#template<auto V>#\newline
+\verb#constexpr auto v = V*2;#\newline
+
+Z konceptami mo¿na by ograniczyæ powy¿szy szablon tak, ¿e typ \verb#V# spe³nia³by wymagania konceptu \verb#Integral#:\newline
+\verb#template<Integral V>#\newline
+\verb#constexpr auto v = V*2;#\newline
+
+Jednak to jest ta sama sk³adnia aktualnie u¿ywana przez \emph{Concepts TS}, do deklarowania parametrów typu szablonu ograniczonego. Jeœli \emph{Concepts TS} mia³y byæ wprowadzone, potrzebna by by³a inna sk³adnia aby deklarowaæ ograniczony parametr szablonu bez typu. Prawdopodobnie sk³adnia stosowana przez \emph{Concepts TS} bardziej nadaje siê do deklarowania parametrów szablonów bez typu, jak pokazano powy¿ej, poniewa¿ pasuje do sk³adni stosowanej dla innych deklaracji zmiennych. To oznacza, ¿e nowa sk³adnia do deklarowania ograniczonych parametrów typu by³aby po¿¹dana ze wzglêdu na spójnoœæ jêzyka.
+
+\item Koncepty by³y powszechnie oczekiwane w celu uzyskania lepszych komunikatów o b³êdach ni¿ obecnie s¹ generowane, gdy pojawiaj¹ siê niepowodzenie podczas tworzenia szablonów. Teoria idzie, poniewa¿ koncepty pozwalaj¹ odrzuciæ kod oparty na ograniczeniu w punkcie u¿ycia szablonu, kompilator mo¿e po prostu zg³osiæ b³¹d ograniczenia, a nie b³¹d w niektórych wyra¿eniach w potencjalnie g³êboko zagnie¿d¿onym stosie instancji szablonu. Niestety okazuje siê, ¿e nie jest tak proste, a u¿ywanie konceptów skutkuje gorszymi komunikatami o b³êdach. Niepowodzenia ograniczeñ czêsto pojawiaj¹ siê jako b³êdy w przeci¹¿eniu, co powoduje potencjalnie d³ug¹ listê kandydatów, z których ka¿da ma w³asn¹ listê przyczyn odrzucenia. Identyfikacja kandydata, który by³ przeznaczony do danego u¿ycia, a nastêpnie okreœlenie, dlaczego wyst¹pi³o niepowodzenia ograniczeñ, mo¿e byæ gorszym doœwiadczeniem ni¿ nawigowanie w stosie tworzenia instancji szablonów.
+
+\item Wielu cz³onków komisji wyra¿a zaniepokojenie faktem, czy obecny projekt konceptów wystarcza jako podstawa, na której mo¿na w przysz³oœci wdro¿yæ sprawdzenie pe³nej definicji szablonu. Mimo zapewnieñ obroñców konceptów, ¿e takie kontrole bêd¹ mo¿liwe, wiele pytañ pozostaje bez odpowiedzi, a cz³onkowie komitetu pozostaj¹ bez przekonania. Wydaje siê ma³o prawdopodobne, ¿e obawy te zostan¹ rozwi¹zane w inny sposób ni¿ poprzez wdro¿enie sprawdzania definicji.
+
+\end{itemize}
+
+Wielu wierzy, ¿e koncepty w jakiejœ formie zostan¹ dodane do \emph{C++19/20}.
+	
+	\newpage
+	
+	\section{Bibliografia}
+	\begin{thebibliography}{6}
+	
+	\bibitem{first} Gabriel Dos Reis, \emph{Generic Programming in C++: The Next Level.}, ACCU, 2002.
+	\bibitem{second} Bjarne Stroustrup, \emph{The Design and Evolution of C++}, AddisonWesley, 1994
+	\bibitem{third}  Bjarne Stroustrup, \emph{Expressing the standard library requirements asconcepts}	
+	\bibitem{fourth} Gabriel Dos Reis, Bjarne Stroustrup, \href{http://www.stroustrup.com/popl06.pdf}{\emph{Specifying C++ Concepts}}
+	\bibitem{fifth} J. C. Dehnert, A. Stepanov, \emph{Fundamentals of Generic Programming}, Dagstuhl Seminar on Generic Programming.1998. Springer LNCS.
+
+	\bibitem{sixth} A. Stepanov, Daniel E.Rose, \emph{From Mathematics to Generic Programming}
+	\bibitem{seventh} D. Gregor, J. Jarvi, J. Siek, B. Stroustrup, G. Dos Reis, A. Lumsdaine, \emph{Concepts: Linguistic Support for Generic Programming in C++}, OOPSLA’06.
+	\bibitem {eighth} Scott Meyers, \emph{Effective Modern C++}, O'REILLY 2015
+	\bibitem {ninth} Andrew Sutton, \href{https://accu.org/index.php/journals/2198}{Defining concepts}
+	\bibitem {tenth} Kevin Chen, \href{https://kevinchen.co/blog/how-to-get-started-cpp-concepts/}{\emph{How to get started with C++ Concepts}}
+	\bibitem {eleventh} Bjarne Stroustrup, \href{http://www.stroustrup.com/good_concepts.pdf}{\emph{Concepts: The Future of Generic Programming}}
+	\bibitem {twelfth} Tom Honermann, \href{http://honermann.net/blog/category/c-concepts/}{\emph{Refinig concepts}}
+	\end{thebibliography}
+	\newpage
+	\begin{center}
+	OŒWIADCZENIE	
+	\end{center}
+	
+	\emph{Ja, ni¿ej podpisany oœwiadczam, ¿e przed³o¿ona praca dyplomowa zosta³a wykonana przeze mnie samodzielnie, nie narusza praw autorskich, interesów prawnych i materialnych innych osób}\newline\newline
+	
+	\begin{minipage}[t]{7cm}
+	\flushleft
+	\noindent \textsc{...........................}
+
+	data
+	\end{minipage}
+	\hfill
+	\begin{minipage}[t]{7cm}
+	\flushright
+	\textsc{.............................}
+
+	podpis
+	\end{minipage}
+
+
+\end{document}
